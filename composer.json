@@ -1,0 +1,11 @@
+{
+    "name": "nextcloud/employee-dashboard",
+    "description": "Employee task and project dashboard for Nextcloud",
+    "type": "project",
+    "license": "AGPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "OCA\\EmployeeDashboard\\": "lib/"
+        }
+    }
+}
