@@ -1,5 +1,5 @@
 {
-    "name": "employee-dashboard",
+    "name": "employee_dashboard",
     "version": "0.1.0",
     "description": "Employee task and project dashboard for Nextcloud",
     "private": true,
