@@ -19,7 +19,7 @@
 
     <template v-else>
       <!-- 1. Welcome Strip -->
-      <WelcomeStrip :employee="data.employee" :organization="data.organization" :focus-now="data.focusNow" />
+      <WelcomeStrip :employee="data.employee" :organization="data.organization" :focus-now="data.focusNow" :workload="data.workload" />
 
       <!-- 2. Primary Focus Area -->
       <section class="emp-dashboard__focus-row">

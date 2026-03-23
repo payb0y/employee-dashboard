@@ -18,8 +18,7 @@
         {{ focusNow.dueToday }} due today
       </span>
       <span class="welcome-strip__badge welcome-strip__badge--info">
-        <!-- TODO: compute open task count -->
-        0 open
+        {{ workload.open }} open
       </span>
     </div>
   </div>
@@ -32,6 +31,7 @@ export default {
     employee: { type: Object, default: function () { return {}; } },
     organization: { type: Object, default: null },
     focusNow: { type: Object, default: function () { return { overdue: 0, dueToday: 0 }; } },
+    workload: { type: Object, default: function () { return { open: 0 }; } },
   },
   computed: {
     initial: function () {
