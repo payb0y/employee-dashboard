@@ -110,14 +110,16 @@ class EmployeeService {
             $projectByBoard[$p['board_id']] = $p;
         }
 
-        $labelsByCard     = $this->fetchLabelsForCards($cardIds);
-        $commentCounts    = $this->fetchCommentCounts($cardIds);
-        $attachmentCounts = $this->fetchAttachmentCounts($cardIds);
+        $labelsByCard      = $this->fetchLabelsForCards($cardIds);
+        $commentsByCard    = $this->fetchCommentsForCards($cardIds);
+        $attachmentsByCard = $this->fetchAttachmentsForCards($cardIds);
 
         $tasks = [];
         foreach ($cards as $card) {
             $cid  = (int)$card['id'];
             $proj = $projectByBoard[$card['board_id']] ?? null;
+            $comments    = $commentsByCard[$cid] ?? [];
+            $attachments = $attachmentsByCard[$cid] ?? [];
 
             $tasks[] = [
                 'id'              => $cid,
@@ -130,8 +132,10 @@ class EmployeeService {
                 'projectName'     => $proj ? $proj['name'] : '',
                 'projectId'       => $proj ? (int)$proj['id'] : null,
                 'labels'          => $labelsByCard[$cid] ?? [],
-                'commentCount'    => $commentCounts[$cid] ?? 0,
-                'attachmentCount' => $attachmentCounts[$cid] ?? 0,
+                'comments'        => $comments,
+                'attachments'     => $attachments,
+                'commentCount'    => count($comments),
+                'attachmentCount' => count($attachments),
             ];
         }
 
@@ -162,42 +166,55 @@ class EmployeeService {
         return $result;
     }
 
-    private function fetchCommentCounts(array $cardIds): array {
+    private function fetchCommentsForCards(array $cardIds): array {
         if (empty($cardIds)) {
             return [];
         }
         $ph  = implode(',', array_fill(0, count($cardIds), '?'));
-        $sql = "SELECT object_id, COUNT(*) AS cnt
+        $sql = "SELECT id, object_id AS card_id, actor_id, message, creation_timestamp
                 FROM *PREFIX*comments
                 WHERE object_type = 'deckCard'
                   AND object_id IN ({$ph})
-                GROUP BY object_id";
+                ORDER BY creation_timestamp ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(array_map('strval', $cardIds));
 
         $result = [];
         while ($row = $stmt->fetch()) {
-            $result[(int)$row['object_id']] = (int)$row['cnt'];
+            $cid = (int)$row['card_id'];
+            $result[$cid][] = [
+                'id'        => (int)$row['id'],
+                'author'    => $row['actor_id'],
+                'message'   => $row['message'],
+                'createdAt' => $row['creation_timestamp'],
+            ];
         }
         return $result;
     }
 
-    private function fetchAttachmentCounts(array $cardIds): array {
+    private function fetchAttachmentsForCards(array $cardIds): array {
         if (empty($cardIds)) {
             return [];
         }
         $ph  = implode(',', array_fill(0, count($cardIds), '?'));
-        $sql = "SELECT card_id, COUNT(*) AS cnt
+        $sql = "SELECT id, card_id, type, data, created_by, created_at
                 FROM *PREFIX*deck_attachment
                 WHERE card_id IN ({$ph})
                   AND deleted_at = 0
-                GROUP BY card_id";
+                ORDER BY created_at ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($cardIds);
 
         $result = [];
         while ($row = $stmt->fetch()) {
-            $result[(int)$row['card_id']] = (int)$row['cnt'];
+            $cid = (int)$row['card_id'];
+            $result[$cid][] = [
+                'id'        => (int)$row['id'],
+                'type'      => $row['type'],
+                'name'      => $row['data'],
+                'createdBy' => $row['created_by'],
+                'createdAt' => date('Y-m-d H:i:s', (int)$row['created_at']),
+            ];
         }
         return $result;
     }

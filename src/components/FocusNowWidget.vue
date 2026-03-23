@@ -33,10 +33,9 @@
         </span>
       </div>
       <div class="focus-widget__actions">
-        <!-- TODO: wire up filter actions -->
-        <button class="focus-widget__btn" disabled>Show overdue</button>
-        <button class="focus-widget__btn" disabled>Show today</button>
-        <button class="focus-widget__btn" disabled>Show all open</button>
+        <button class="focus-widget__btn" @click="$emit('filter', 'Overdue')">Show overdue</button>
+        <button class="focus-widget__btn" @click="$emit('filter', 'Today')">Show today</button>
+        <button class="focus-widget__btn" @click="$emit('filter', 'All Open')">Show all open</button>
       </div>
     </div>
   </div>

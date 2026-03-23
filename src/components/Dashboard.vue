@@ -23,7 +23,7 @@
 
       <!-- 2. Primary Focus Area -->
       <section class="emp-dashboard__focus-row">
-        <FocusNowWidget :focus="data.focusNow" />
+        <FocusNowWidget :focus="data.focusNow" @filter="onFocusFilter" />
         <div class="emp-dashboard__focus-side">
           <WorkloadWidget :workload="data.workload" />
           <ScheduleWidget :schedule="data.schedule" />
@@ -31,7 +31,7 @@
       </section>
 
       <!-- A. My Tasks Board -->
-      <TasksBoardWidget :tasks="data.tasks" :projects="data.projects" />
+      <TasksBoardWidget ref="tasksBoard" :tasks="data.tasks" :projects="data.projects" :focus-filter="focusFilter" />
 
       <!-- B. My Week Panel -->
       <MyWeekWidget :tasks="data.tasks" :schedule="data.schedule" :timeline="data.timeline" />
@@ -74,6 +74,23 @@ export default {
   },
   props: {
     data: { type: Object, required: true },
+  },
+  data: function () {
+    return {
+      focusFilter: null,
+    };
+  },
+  methods: {
+    onFocusFilter: function (tab) {
+      var self = this;
+      this.focusFilter = { tab: tab, ts: Date.now() };
+      this.$nextTick(function () {
+        var el = self.$refs.tasksBoard;
+        if (el && el.$el) {
+          el.$el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    },
   },
 };
 </script>
