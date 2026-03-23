@@ -15,9 +15,10 @@ class EmployeeService {
     }
 
     public function getDashboardData(string $uid): array {
-        $orgId = $this->resolveOrgId($uid);
-        $cards = $this->fetchAssignedCards($uid);
+        $orgId    = $this->resolveOrgId($uid);
+        $cards    = $this->fetchAssignedCards($uid);
         $projects = $this->fetchUserProjects($uid);
+
         $projectIds = array_map(function ($p) {
             return (int)$p['id'];
         }, $projects);
@@ -28,15 +29,17 @@ class EmployeeService {
             'focusNow'     => $this->computeFocusNow($cards),
             'workload'     => $this->computeWorkload($cards, $projects),
             'schedule'     => $this->computeSchedule($cards, $projectIds),
-            'tasks'        => [],
-            'projects'     => [],
-            'timeline'     => [],
-            'resources'    => $this->getResources($uid),
+            'tasks'        => $this->buildTaskList($cards, $projects),
+            'projects'     => $this->formatProjects($projects),
+            'timeline'     => $this->fetchTimeline($projectIds),
+            'resources'    => $this->computeResources($projects, $projectIds),
         ];
     }
 
+    // ── Org resolution ───────────────────────────────────────────────
+
     public function resolveOrgId(string $uid): ?int {
-        $sql = "SELECT id FROM *PREFIX*organizations WHERE admin_uid = ? LIMIT 1";
+        $sql  = "SELECT id FROM *PREFIX*organizations WHERE admin_uid = ? LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$uid]);
         $row = $stmt->fetch();
@@ -44,7 +47,7 @@ class EmployeeService {
             return (int)$row['id'];
         }
 
-        $sql2 = "SELECT organization_id FROM *PREFIX*organization_members WHERE user_uid = ? LIMIT 1";
+        $sql2  = "SELECT organization_id FROM *PREFIX*organization_members WHERE user_uid = ? LIMIT 1";
         $stmt2 = $this->db->prepare($sql2);
         $stmt2->execute([$uid]);
         $row2 = $stmt2->fetch();
@@ -55,13 +58,11 @@ class EmployeeService {
         return null;
     }
 
-    /**
-     * Fetch all non-deleted, non-archived cards assigned to the user,
-     * joined with stack and board info.
-     */
+    // ── Core data fetchers ───────────────────────────────────────────
+
     private function fetchAssignedCards(string $uid): array {
-        $sql = "SELECT c.id, c.title, c.duedate, c.done, c.stack_id,
-                       c.created_at, c.last_modified,
+        $sql = "SELECT c.id, c.title, c.description, c.duedate, c.done,
+                       c.stack_id, c.created_at, c.last_modified,
                        s.title AS stack_title, s.board_id,
                        b.title AS board_title
                 FROM *PREFIX*deck_assigned_users au
@@ -78,11 +79,11 @@ class EmployeeService {
         return $stmt->fetchAll();
     }
 
-    /**
-     * Fetch projects linked to the user through their assigned cards' boards.
-     */
     private function fetchUserProjects(string $uid): array {
-        $sql = "SELECT DISTINCT p.id, p.name, p.board_id, p.status
+        $sql = "SELECT DISTINCT p.id, p.name, p.number, p.description,
+                       p.board_id, p.status, p.organization_id,
+                       p.folder_id, p.folder_path, p.white_board_id,
+                       p.client_name, p.created_at
                 FROM *PREFIX*deck_assigned_users au
                 JOIN *PREFIX*deck_cards c ON c.id = au.card_id
                 JOIN *PREFIX*deck_stacks s ON s.id = c.stack_id
@@ -95,15 +96,208 @@ class EmployeeService {
         return $stmt->fetchAll();
     }
 
+    // ── Task list builder ────────────────────────────────────────────
+
+    private function buildTaskList(array $cards, array $projects): array {
+        if (empty($cards)) {
+            return [];
+        }
+
+        $cardIds = array_map(function ($c) { return (int)$c['id']; }, $cards);
+
+        $projectByBoard = [];
+        foreach ($projects as $p) {
+            $projectByBoard[$p['board_id']] = $p;
+        }
+
+        $labelsByCard     = $this->fetchLabelsForCards($cardIds);
+        $commentCounts    = $this->fetchCommentCounts($cardIds);
+        $attachmentCounts = $this->fetchAttachmentCounts($cardIds);
+
+        $tasks = [];
+        foreach ($cards as $card) {
+            $cid  = (int)$card['id'];
+            $proj = $projectByBoard[$card['board_id']] ?? null;
+
+            $tasks[] = [
+                'id'              => $cid,
+                'title'           => $card['title'],
+                'description'     => $card['description'] ?: '',
+                'duedate'         => $card['duedate'],
+                'done'            => $card['done'],
+                'stackTitle'      => $card['stack_title'],
+                'boardTitle'      => $card['board_title'],
+                'projectName'     => $proj ? $proj['name'] : '',
+                'projectId'       => $proj ? (int)$proj['id'] : null,
+                'labels'          => $labelsByCard[$cid] ?? [],
+                'commentCount'    => $commentCounts[$cid] ?? 0,
+                'attachmentCount' => $attachmentCounts[$cid] ?? 0,
+            ];
+        }
+
+        return $tasks;
+    }
+
+    private function fetchLabelsForCards(array $cardIds): array {
+        if (empty($cardIds)) {
+            return [];
+        }
+        $ph  = implode(',', array_fill(0, count($cardIds), '?'));
+        $sql = "SELECT al.card_id, l.id, l.title, l.color
+                FROM *PREFIX*deck_assigned_labels al
+                JOIN *PREFIX*deck_labels l ON l.id = al.label_id
+                WHERE al.card_id IN ({$ph})";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($cardIds);
+
+        $result = [];
+        while ($row = $stmt->fetch()) {
+            $cid = (int)$row['card_id'];
+            $result[$cid][] = [
+                'id'    => (int)$row['id'],
+                'title' => $row['title'],
+                'color' => $row['color'],
+            ];
+        }
+        return $result;
+    }
+
+    private function fetchCommentCounts(array $cardIds): array {
+        if (empty($cardIds)) {
+            return [];
+        }
+        $ph  = implode(',', array_fill(0, count($cardIds), '?'));
+        $sql = "SELECT object_id, COUNT(*) AS cnt
+                FROM *PREFIX*comments
+                WHERE object_type = 'deckCard'
+                  AND object_id IN ({$ph})
+                GROUP BY object_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(array_map('strval', $cardIds));
+
+        $result = [];
+        while ($row = $stmt->fetch()) {
+            $result[(int)$row['object_id']] = (int)$row['cnt'];
+        }
+        return $result;
+    }
+
+    private function fetchAttachmentCounts(array $cardIds): array {
+        if (empty($cardIds)) {
+            return [];
+        }
+        $ph  = implode(',', array_fill(0, count($cardIds), '?'));
+        $sql = "SELECT card_id, COUNT(*) AS cnt
+                FROM *PREFIX*deck_attachment
+                WHERE card_id IN ({$ph})
+                  AND deleted_at = 0
+                GROUP BY card_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($cardIds);
+
+        $result = [];
+        while ($row = $stmt->fetch()) {
+            $result[(int)$row['card_id']] = (int)$row['cnt'];
+        }
+        return $result;
+    }
+
+    // ── Projects formatter ───────────────────────────────────────────
+
+    private function formatProjects(array $projects): array {
+        return array_map(function ($p) {
+            return [
+                'id'           => (int)$p['id'],
+                'name'         => $p['name'],
+                'number'       => $p['number'] ?? '',
+                'description'  => $p['description'] ?? '',
+                'boardId'      => $p['board_id'],
+                'status'       => (int)($p['status'] ?? 0),
+                'folderId'     => $p['folder_id'] ? (int)$p['folder_id'] : null,
+                'folderPath'   => $p['folder_path'] ?? '',
+                'whiteBoardId' => $p['white_board_id'] ?? null,
+                'clientName'   => $p['client_name'] ?? '',
+                'createdAt'    => $p['created_at'],
+            ];
+        }, $projects);
+    }
+
+    // ── Timeline ─────────────────────────────────────────────────────
+
+    private function fetchTimeline(array $projectIds): array {
+        if (empty($projectIds)) {
+            return [];
+        }
+        $ph  = implode(',', array_fill(0, count($projectIds), '?'));
+        $sql = "SELECT id, project_id, label, start_date, end_date,
+                       color, order_index, item_type, system_key
+                FROM *PREFIX*project_timeline_items
+                WHERE project_id IN ({$ph})
+                ORDER BY order_index ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($projectIds);
+
+        $items = [];
+        while ($row = $stmt->fetch()) {
+            $items[] = [
+                'id'         => (int)$row['id'],
+                'projectId'  => (int)$row['project_id'],
+                'label'      => $row['label'],
+                'startDate'  => $row['start_date'],
+                'endDate'    => $row['end_date'],
+                'color'      => $row['color'],
+                'orderIndex' => (int)$row['order_index'],
+                'itemType'   => $row['item_type'],
+                'systemKey'  => $row['system_key'],
+            ];
+        }
+        return $items;
+    }
+
+    // ── Resources ────────────────────────────────────────────────────
+
+    private function computeResources(array $projects, array $projectIds): array {
+        $folders     = 0;
+        $whiteboards = 0;
+        foreach ($projects as $p) {
+            if (!empty($p['folder_id'])) {
+                $folders++;
+            }
+            if (!empty($p['white_board_id'])) {
+                $whiteboards++;
+            }
+        }
+
+        $notes = 0;
+        if (!empty($projectIds)) {
+            $ph   = implode(',', array_fill(0, count($projectIds), '?'));
+            $sql  = "SELECT COUNT(*) AS cnt FROM *PREFIX*project_notes WHERE project_id IN ({$ph})";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($projectIds);
+            $row = $stmt->fetch();
+            if ($row) {
+                $notes = (int)$row['cnt'];
+            }
+        }
+
+        return [
+            'files'       => $folders,
+            'notes'       => $notes,
+            'whiteboards' => $whiteboards,
+        ];
+    }
+
+    // ── Profile & Org ────────────────────────────────────────────────
+
     private function getEmployeeProfile(string $uid, ?int $orgId): array {
-        $sql = "SELECT data FROM *PREFIX*accounts WHERE uid = ?";
+        $sql  = "SELECT data FROM *PREFIX*accounts WHERE uid = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$uid]);
         $row = $stmt->fetch();
 
         $displayName = $uid;
         $email = '';
-        $role = '';
+        $role  = '';
 
         if ($row && !empty($row['data'])) {
             $acct = json_decode($row['data'], true);
@@ -116,8 +310,8 @@ class EmployeeService {
 
         $memberRole = '';
         if ($orgId !== null) {
-            $sql2 = "SELECT role FROM *PREFIX*organization_members
-                     WHERE user_uid = ? AND organization_id = ? LIMIT 1";
+            $sql2  = "SELECT role FROM *PREFIX*organization_members
+                      WHERE user_uid = ? AND organization_id = ? LIMIT 1";
             $stmt2 = $this->db->prepare($sql2);
             $stmt2->execute([$uid, $orgId]);
             $row2 = $stmt2->fetch();
@@ -140,7 +334,7 @@ class EmployeeService {
         if ($orgId === null) {
             return null;
         }
-        $sql = "SELECT id, name FROM *PREFIX*organizations WHERE id = ?";
+        $sql  = "SELECT id, name FROM *PREFIX*organizations WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$orgId]);
         $row = $stmt->fetch();
@@ -152,6 +346,8 @@ class EmployeeService {
             'name' => $row['name'],
         ];
     }
+
+    // ── Stats computations (unchanged) ───────────────────────────────
 
     private function computeFocusNow(array $cards): array {
         $now        = new \DateTime();
@@ -244,7 +440,6 @@ class EmployeeService {
             if ($card['done'] !== null) {
                 continue;
             }
-
             if ($card['duedate'] === null) {
                 $noDueDate++;
             } else {
@@ -260,16 +455,16 @@ class EmployeeService {
 
         $nextMilestone = null;
         if (!empty($projectIds)) {
-            $placeholders = implode(',', array_fill(0, count($projectIds), '?'));
+            $ph  = implode(',', array_fill(0, count($projectIds), '?'));
             $sql = "SELECT label, end_date
                     FROM *PREFIX*project_timeline_items
-                    WHERE project_id IN ({$placeholders})
+                    WHERE project_id IN ({$ph})
                       AND item_type = 'milestone'
                       AND end_date >= ?
                     ORDER BY end_date ASC
                     LIMIT 1";
             $params = array_merge($projectIds, [$todayStart->format('Y-m-d')]);
-            $stmt = $this->db->prepare($sql);
+            $stmt   = $this->db->prepare($sql);
             $stmt->execute($params);
             $row = $stmt->fetch();
             if ($row) {
@@ -285,15 +480,6 @@ class EmployeeService {
             'dueThisWeek'   => $dueThisWeek,
             'noDueDate'     => $noDueDate,
             'nextMilestone' => $nextMilestone,
-        ];
-    }
-
-    private function getResources(string $uid): array {
-        // TODO: wire to real file/note/whiteboard counts
-        return [
-            'files'       => 0,
-            'notes'       => 0,
-            'whiteboards' => 0,
         ];
     }
 }
