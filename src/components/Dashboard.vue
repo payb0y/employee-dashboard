@@ -105,12 +105,99 @@ export default {
 </script>
 
 <style>
+/* ── Nextcloud style isolation ──────────────────────────────── */
 #app-content:has(.emp-dashboard) {
   background-color: #f0f1f5 !important;
+  padding: 0 !important;
 }
 #employee-dashboard-root {
   background-color: #f0f1f5 !important;
   min-height: 100vh;
+  color: #1a1a2e !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial,
+    sans-serif !important;
+}
+
+/* Reset headings — Nextcloud adds borders, padding, and themed colors */
+#employee-dashboard-root h1,
+#employee-dashboard-root h2,
+#employee-dashboard-root h3,
+#employee-dashboard-root h4,
+#employee-dashboard-root h5,
+#employee-dashboard-root h6 {
+  border: none !important;
+  border-bottom: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #1a1a2e !important;
+  font-family: inherit !important;
+  line-height: 1.4 !important;
+  background: none !important;
+}
+
+/* Reset links */
+#employee-dashboard-root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Reset buttons — Nextcloud styles all buttons with themed colors */
+#employee-dashboard-root button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-size: inherit;
+  line-height: inherit;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Reset inputs/textareas */
+#employee-dashboard-root input,
+#employee-dashboard-root textarea {
+  font-family: inherit;
+  color: #1a1a2e;
+  background: #fff;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Reset paragraphs */
+#employee-dashboard-root p {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+}
+
+/* Reset lists */
+#employee-dashboard-root ul,
+#employee-dashboard-root ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Prevent Nextcloud dark mode / theming from overriding our colors */
+#employee-dashboard-root * {
+  --color-main-text: #1a1a2e;
+  --color-text-maxcontrast: #6b7280;
+}
+
+/* Reset SVG colors — Nextcloud can theme these via fill/stroke */
+#employee-dashboard-root svg {
+  color: inherit;
+}
+
+/* Reset section/div backgrounds that Nextcloud might theme */
+#employee-dashboard-root section {
+  background: transparent;
 }
 </style>
 
