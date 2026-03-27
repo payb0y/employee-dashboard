@@ -536,42 +536,6 @@ class EmployeeService {
         return $items;
     }
 
-    public function createNote(string $uid, int $projectId, string $title, string $content, string $visibility = 'public'): array {
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
-        $sql = "INSERT INTO *PREFIX*project_notes (project_id, user_id, title, content, visibility, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$projectId, $uid, $title, $content, $visibility, $now, $now]);
-        $id = (int)$this->db->lastInsertId('*PREFIX*project_notes');
-
-        return [
-            'id'         => $id,
-            'projectId'  => $projectId,
-            'userId'     => $uid,
-            'title'      => $title,
-            'content'    => $content,
-            'visibility' => $visibility,
-            'createdAt'  => $now,
-            'updatedAt'  => $now,
-        ];
-    }
-
-    public function updateNote(int $noteId, string $uid, string $title, string $content): bool {
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
-        $sql = "UPDATE *PREFIX*project_notes SET title = ?, content = ?, updated_at = ?
-                WHERE id = ? AND user_id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$title, $content, $now, $noteId, $uid]);
-        return $stmt->rowCount() > 0;
-    }
-
-    public function deleteNote(int $noteId, string $uid): bool {
-        $sql = "DELETE FROM *PREFIX*project_notes WHERE id = ? AND user_id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$noteId, $uid]);
-        return $stmt->rowCount() > 0;
-    }
-
     // ── File listing ─────────────────────────────────────────────
 
     public function listFolderContents(string $uid, string $folderPath): array {

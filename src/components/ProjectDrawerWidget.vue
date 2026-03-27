@@ -108,44 +108,14 @@
 
         <!-- Tab: Notes -->
         <div v-if="activeTab === 'notes'" class="project-drawer__tab-body">
-          <!-- New note form -->
-          <div class="project-drawer__note-form">
-            <input v-model="newNoteTitle" class="project-drawer__note-input" placeholder="Note title" />
-            <textarea v-model="newNoteContent" class="project-drawer__note-textarea" placeholder="Write your note..." rows="3"></textarea>
-            <button class="project-drawer__note-save" :disabled="!newNoteTitle.trim() || noteSaving" @click="saveNewNote">
-              {{ noteSaving ? 'Saving...' : 'Add Note' }}
-            </button>
-          </div>
-
-          <div v-if="projectNotes.length === 0 && !newNoteTitle" class="project-drawer__empty-tab">No notes yet. Add one above.</div>
+          <div v-if="projectNotes.length === 0" class="project-drawer__empty-tab">No notes for this project.</div>
 
           <div v-for="note in projectNotes" :key="note.id" class="project-drawer__note-card">
-            <!-- View mode -->
-            <template v-if="editingNoteId !== note.id">
-              <div class="project-drawer__note-header">
-                <strong class="project-drawer__note-title">{{ note.title }}</strong>
-                <div class="project-drawer__note-actions">
-                  <button class="project-drawer__note-action" @click="startEditNote(note)" title="Edit">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                  <button class="project-drawer__note-action project-drawer__note-action--danger" @click="removeNote(note.id)" title="Delete">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
-                </div>
-              </div>
-              <p v-if="note.content" class="project-drawer__note-content">{{ note.content }}</p>
-              <span class="project-drawer__note-meta">{{ note.userId }} &middot; {{ timeAgo(note.updatedAt || note.createdAt) }}</span>
-            </template>
-
-            <!-- Edit mode -->
-            <template v-else>
-              <input v-model="editNoteTitle" class="project-drawer__note-input" />
-              <textarea v-model="editNoteContent" class="project-drawer__note-textarea" rows="3"></textarea>
-              <div class="project-drawer__note-edit-actions">
-                <button class="project-drawer__note-save" :disabled="!editNoteTitle.trim()" @click="saveEditNote(note.id)">Save</button>
-                <button class="project-drawer__note-cancel" @click="editingNoteId = null">Cancel</button>
-              </div>
-            </template>
+            <div class="project-drawer__note-header">
+              <strong class="project-drawer__note-title">{{ note.title }}</strong>
+            </div>
+            <p v-if="note.content" class="project-drawer__note-content">{{ note.content }}</p>
+            <span class="project-drawer__note-meta">{{ note.userId }} &middot; {{ timeAgo(note.updatedAt || note.createdAt) }}</span>
           </div>
         </div>
 
@@ -175,6 +145,7 @@ import axios from "@nextcloud/axios";
 import { generateUrl } from "@nextcloud/router";
 
 export default {
+
   name: "ProjectDrawerWidget",
   props: {
     project: { type: Object, default: null },
@@ -189,13 +160,6 @@ export default {
       files: [],
       filesLoading: false,
       filesLoadedFor: null,
-      newNoteTitle: "",
-      newNoteContent: "",
-      noteSaving: false,
-      editingNoteId: null,
-      editNoteTitle: "",
-      editNoteContent: "",
-      localNotes: [],
     };
   },
   computed: {
@@ -220,7 +184,7 @@ export default {
     projectNotes: function () {
       if (!this.project) return [];
       var pid = this.project.id;
-      return this.localNotes.filter(function (n) { return n.projectId === pid; });
+      return this.notes.filter(function (n) { return n.projectId === pid; });
     },
     tabs: function () {
       return [
@@ -237,18 +201,9 @@ export default {
         this.collapsed = false;
       }
       this.activeTab = "timeline";
-      this.editingNoteId = null;
-      this.newNoteTitle = "";
-      this.newNoteContent = "";
       if (val && val.folderId && this.filesLoadedFor !== val.id) {
         this.loadFiles(val);
       }
-    },
-    notes: {
-      handler: function (val) {
-        this.localNotes = val ? val.slice() : [];
-      },
-      immediate: true,
     },
     activeTab: function (tab) {
       if (tab === "files" && this.project && this.project.folderId && this.filesLoadedFor !== this.project.id) {
@@ -294,61 +249,6 @@ export default {
       var d = new Date(ts * 1000);
       var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       return months[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
-    },
-
-    // Notes CRUD
-    saveNewNote: function () {
-      if (!this.newNoteTitle.trim() || !this.project) return;
-      var self = this;
-      this.noteSaving = true;
-      var url = generateUrl("/apps/employee_dashboard/api/notes");
-      axios.post(url, {
-        projectId: this.project.id,
-        title: this.newNoteTitle,
-        content: this.newNoteContent,
-      }).then(function (res) {
-        self.localNotes.unshift(res.data);
-        self.newNoteTitle = "";
-        self.newNoteContent = "";
-      }).catch(function () {
-        alert("Failed to save note");
-      }).then(function () {
-        self.noteSaving = false;
-      });
-    },
-    startEditNote: function (note) {
-      this.editingNoteId = note.id;
-      this.editNoteTitle = note.title;
-      this.editNoteContent = note.content || "";
-    },
-    saveEditNote: function (noteId) {
-      if (!this.editNoteTitle.trim()) return;
-      var self = this;
-      var url = generateUrl("/apps/employee_dashboard/api/notes/" + noteId);
-      axios.put(url, {
-        title: this.editNoteTitle,
-        content: this.editNoteContent,
-      }).then(function () {
-        var idx = self.localNotes.findIndex(function (n) { return n.id === noteId; });
-        if (idx !== -1) {
-          self.localNotes[idx].title = self.editNoteTitle;
-          self.localNotes[idx].content = self.editNoteContent;
-          self.localNotes[idx].updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
-        }
-        self.editingNoteId = null;
-      }).catch(function () {
-        alert("Failed to update note");
-      });
-    },
-    removeNote: function (noteId) {
-      if (!confirm("Delete this note?")) return;
-      var self = this;
-      var url = generateUrl("/apps/employee_dashboard/api/notes/" + noteId);
-      axios.delete(url).then(function () {
-        self.localNotes = self.localNotes.filter(function (n) { return n.id !== noteId; });
-      }).catch(function () {
-        alert("Failed to delete note");
-      });
     },
 
     statusLabel: function (status) {
@@ -684,66 +584,6 @@ export default {
 }
 
 /* Notes */
-.project-drawer__note-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
-  padding: 12px;
-  background: #f9fafb;
-  border-radius: 10px;
-}
-.project-drawer__note-input {
-  font-size: 13px;
-  padding: 7px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
-  outline: none;
-  font-family: inherit;
-}
-.project-drawer__note-input:focus { border-color: #4a90d9; }
-.project-drawer__note-textarea {
-  font-size: 13px;
-  padding: 7px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
-  outline: none;
-  resize: vertical;
-  font-family: inherit;
-  line-height: 1.5;
-}
-.project-drawer__note-textarea:focus { border-color: #4a90d9; }
-.project-drawer__note-save {
-  align-self: flex-start;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 6px;
-  border: none;
-  background: #4a90d9;
-  color: #fff;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.project-drawer__note-save:hover { background: #3b7fc7; }
-.project-drawer__note-save:disabled { opacity: 0.5; cursor: default; }
-.project-drawer__note-cancel {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: var(--color-text-secondary, #6b7280);
-  cursor: pointer;
-}
-.project-drawer__note-edit-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 4px;
-}
 .project-drawer__note-card {
   padding: 12px;
   border: 1px solid #f3f4f6;
@@ -751,9 +591,6 @@ export default {
   margin-bottom: 8px;
 }
 .project-drawer__note-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-bottom: 4px;
 }
 .project-drawer__note-title {
@@ -761,21 +598,6 @@ export default {
   font-weight: 700;
   color: var(--color-text-primary, #1a1a2e);
 }
-.project-drawer__note-actions {
-  display: flex;
-  gap: 4px;
-}
-.project-drawer__note-action {
-  background: none;
-  border: none;
-  padding: 3px;
-  cursor: pointer;
-  color: var(--color-text-muted, #9ca3af);
-  border-radius: 4px;
-  transition: color 0.15s, background 0.15s;
-}
-.project-drawer__note-action:hover { color: #4a90d9; background: #f0f4ff; }
-.project-drawer__note-action--danger:hover { color: #d94040; background: #fef2f2; }
 .project-drawer__note-content {
   font-size: 12px;
   color: var(--color-text-secondary, #6b7280);
