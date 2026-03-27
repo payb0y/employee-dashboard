@@ -38,19 +38,4 @@ class DashboardController extends Controller {
 
         return new JSONResponse($data);
     }
-
-    /**
-     * @NoAdminRequired
-     * @NoCSRFRequired
-     */
-    public function listFiles(): JSONResponse {
-        $folderId = (int)$this->request->getParam('folderId', 0);
-        $folderPath = (string)$this->request->getParam('folderPath', '');
-        if ($folderId <= 0) {
-            return new JSONResponse(['error' => 'folderId is required'], 400);
-        }
-
-        $files = $this->employeeService->listFolderContents($folderId, $folderPath);
-        return new JSONResponse($files);
-    }
 }

@@ -82,30 +82,6 @@
           </div>
         </div>
 
-        <!-- Tab: Files -->
-        <div v-if="activeTab === 'files'" class="project-drawer__tab-body">
-          <div v-if="!project.folderId" class="project-drawer__empty-tab">No shared folder linked to this project.</div>
-          <template v-else>
-            <div v-if="filesLoading" class="project-drawer__empty-tab">Loading files&hellip;</div>
-            <div v-else-if="files.length === 0" class="project-drawer__empty-tab">Folder is empty.</div>
-            <div v-else class="project-drawer__file-list">
-              <div v-for="file in files" :key="file.name" class="project-drawer__file-item">
-                <div class="project-drawer__file-icon">
-                  <svg v-if="file.type === 'folder'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-                </div>
-                <div class="project-drawer__file-info">
-                  <a :href="fileUrl(file)" class="project-drawer__file-name" target="_blank" rel="noopener">{{ file.name }}</a>
-                  <span class="project-drawer__file-meta">
-                    <span v-if="file.type !== 'folder'">{{ humanSize(file.size) }}</span>
-                    <span>{{ formatTimestamp(file.mtime) }}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </template>
-        </div>
-
         <!-- Tab: Notes -->
         <div v-if="activeTab === 'notes'" class="project-drawer__tab-body">
           <div v-if="projectNotes.length === 0" class="project-drawer__empty-tab">No notes for this project.</div>
@@ -141,11 +117,7 @@
 </template>
 
 <script>
-import axios from "@nextcloud/axios";
-import { generateUrl } from "@nextcloud/router";
-
 export default {
-
   name: "ProjectDrawerWidget",
   props: {
     project: { type: Object, default: null },
@@ -157,9 +129,6 @@ export default {
     return {
       collapsed: false,
       activeTab: "timeline",
-      files: [],
-      filesLoading: false,
-      filesLoadedFor: null,
     };
   },
   computed: {
@@ -189,7 +158,6 @@ export default {
     tabs: function () {
       return [
         { key: "timeline", label: "Timeline", count: this.projectTimeline.length },
-        { key: "files", label: "Files", count: this.project && this.project.folderId ? undefined : 0 },
         { key: "notes", label: "Notes", count: this.projectNotes.length },
         { key: "activity", label: "Activity", count: this.projectEvents.length },
       ];
@@ -201,56 +169,9 @@ export default {
         this.collapsed = false;
       }
       this.activeTab = "timeline";
-      if (val && val.folderId && this.filesLoadedFor !== val.id) {
-        this.loadFiles(val);
-      }
-    },
-    activeTab: function (tab) {
-      if (tab === "files" && this.project && this.project.folderId && this.filesLoadedFor !== this.project.id) {
-        this.loadFiles(this.project);
-      }
     },
   },
   methods: {
-    loadFiles: function (proj) {
-      if (!proj || !proj.folderId) return;
-      var self = this;
-      this.filesLoading = true;
-      this.files = [];
-      var url = generateUrl("/apps/employee_dashboard/api/files");
-      axios.get(url, { params: { folderId: proj.folderId, folderPath: proj.folderPath || "" } })
-        .then(function (res) {
-          self.files = res.data || [];
-          self.filesLoadedFor = proj.id;
-        })
-        .catch(function () {
-          self.files = [];
-        })
-        .then(function () {
-          self.filesLoading = false;
-        });
-    },
-    fileUrl: function (file) {
-      if (file.type === "folder") {
-        return OC.generateUrl("/apps/files/?dir=" + encodeURIComponent("/" + file.path));
-      }
-      return OC.generateUrl("/apps/files/?dir=" + encodeURIComponent("/" + file.path.replace(/\/[^/]+$/, "")) + "&openfile=true");
-    },
-    humanSize: function (bytes) {
-      if (!bytes || bytes <= 0) return "0 B";
-      var units = ["B", "KB", "MB", "GB"];
-      var i = 0;
-      var val = bytes;
-      while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
-      return (i === 0 ? val : val.toFixed(1)) + " " + units[i];
-    },
-    formatTimestamp: function (ts) {
-      if (!ts) return "";
-      var d = new Date(ts * 1000);
-      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      return months[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
-    },
-
     statusLabel: function (status) {
       var map = { 0: "Active", 1: "Completed", 2: "Archived" };
       return map[status] || "Active";
@@ -536,49 +457,6 @@ export default {
 .project-drawer__tl-badge--phase { background: #e0f2fe; color: #0369a1; }
 .project-drawer__tl-badge--milestone { background: #fef3c7; color: #92400e; }
 .project-drawer__tl-date {
-  font-size: 11px;
-  color: var(--color-text-muted, #9ca3af);
-}
-
-/* File browser */
-.project-drawer__file-list {
-  display: flex;
-  flex-direction: column;
-}
-.project-drawer__file-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  transition: background 0.12s;
-}
-.project-drawer__file-item:hover { background: #f9fafb; }
-.project-drawer__file-icon {
-  flex-shrink: 0;
-  width: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.project-drawer__file-info {
-  flex: 1;
-  min-width: 0;
-}
-.project-drawer__file-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-primary, #1a1a2e);
-  text-decoration: none;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.project-drawer__file-name:hover { color: #4a90d9; text-decoration: underline; }
-.project-drawer__file-meta {
-  display: flex;
-  gap: 8px;
   font-size: 11px;
   color: var(--color-text-muted, #9ca3af);
 }

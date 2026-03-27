@@ -533,38 +533,6 @@ class EmployeeService {
         return $items;
     }
 
-    // ── File listing ─────────────────────────────────────────────
-
-    public function listFolderContents(int $folderId, string $folderPath): array {
-        if ($folderId <= 0) {
-            return [];
-        }
-
-        $sql = "SELECT f.fileid, f.name, f.size, f.mtime, m.mimetype
-                FROM *PREFIX*filecache f
-                JOIN *PREFIX*mimetypes m ON m.id = f.mimetype
-                WHERE f.parent = ?
-                ORDER BY (m.mimetype = 'httpd/unix-directory') DESC, f.name ASC";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$folderId]);
-
-        $cleanPath = trim($folderPath, '/');
-        $items = [];
-        while ($row = $stmt->fetch()) {
-            $isFolder = $row['mimetype'] === 'httpd/unix-directory';
-            $items[] = [
-                'id'       => (int)$row['fileid'],
-                'name'     => $row['name'],
-                'size'     => (int)$row['size'],
-                'type'     => $isFolder ? 'folder' : 'file',
-                'mtime'    => (int)$row['mtime'],
-                'mimetype' => $row['mimetype'],
-                'path'     => $cleanPath . '/' . $row['name'],
-            ];
-        }
-        return $items;
-    }
-
     // ── Activity Events ──────────────────────────────────────────
 
     private function fetchActivityEvents(array $projectIds): array {
