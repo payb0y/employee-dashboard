@@ -34,7 +34,7 @@
       <TasksBoardWidget ref="tasksBoard" :tasks="data.tasks" :projects="data.projects" :focus-filter="focusFilter" />
 
       <!-- B. My Week Panel -->
-      <MyWeekWidget :tasks="data.tasks" :schedule="data.schedule" :timeline="data.timeline" />
+      <MyWeekWidget :tasks="data.tasks" />
 
       <!-- B2. Gantt Chart -->
       <GanttWidget :timeline="data.timeline" :projects="data.projects" />

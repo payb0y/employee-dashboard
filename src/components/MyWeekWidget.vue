@@ -9,46 +9,47 @@
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
         My Week
+        <span class="my-week__badge">{{ totalThisWeek }} tasks</span>
       </h3>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="my-week__chevron" :class="{ 'my-week__chevron--rotated': collapsed }">
         <polyline points="18 15 12 9 6 15" />
       </svg>
     </div>
     <div v-show="!collapsed" class="my-week__body">
-      <!-- Summary row -->
-      <div class="my-week__summary">
-        <div class="my-week__section">
-          <span class="my-week__section-label">Due Today</span>
-          <span class="my-week__section-value">{{ schedule.dueToday }}</span>
+
+      <!-- Overdue -->
+      <div v-if="overdueTasks.length > 0" class="my-week__day my-week__day--overdue">
+        <div class="my-week__day-header">
+          <span class="my-week__day-label">Overdue</span>
+          <span class="my-week__day-count">{{ overdueTasks.length }}</span>
         </div>
-        <div class="my-week__section">
-          <span class="my-week__section-label">Due Next 7 Days</span>
-          <span class="my-week__section-value">{{ schedule.dueThisWeek }}</span>
-        </div>
-        <div class="my-week__section">
-          <span class="my-week__section-label">No Due Date</span>
-          <span class="my-week__section-value">{{ schedule.noDueDate || 0 }}</span>
-        </div>
-        <div class="my-week__section">
-          <span class="my-week__section-label">Next Milestone</span>
-          <span class="my-week__section-value">{{ nextMilestoneLabel }}</span>
+        <div v-for="task in overdueTasks" :key="'o-' + task.id" class="my-week__task" :class="{ 'my-week__task--done': task.done }">
+          <span class="my-week__task-dot my-week__task-dot--overdue"></span>
+          <span class="my-week__task-title">{{ task.title }}</span>
+          <span v-if="task.projectName" class="my-week__task-project">{{ task.projectName }}</span>
+          <span v-for="label in (task.labels || [])" :key="label.id" class="my-week__task-label" :style="{ background: '#' + label.color }" :title="label.title"></span>
+          <span class="my-week__task-due">{{ shortDate(task.duedate) }}</span>
         </div>
       </div>
 
-      <!-- Timeline items -->
-      <div v-if="timeline.length > 0" class="my-week__timeline">
-        <h4 class="my-week__sub-title">Project Timeline</h4>
-        <div v-for="item in sortedTimeline" :key="item.id" class="my-week__tl-item">
-          <span class="my-week__tl-dot" :style="{ background: item.color || '#94a3b8' }"></span>
-          <div class="my-week__tl-content">
-            <div class="my-week__tl-row">
-              <span class="my-week__tl-label">{{ item.label }}</span>
-              <span class="my-week__tl-badge" :class="'my-week__tl-badge--' + item.itemType">{{ item.itemType }}</span>
-            </div>
-            <span class="my-week__tl-date">{{ formatRange(item) }}</span>
-          </div>
+      <!-- Week days -->
+      <div v-for="day in weekDays" :key="day.date" class="my-week__day" :class="{ 'my-week__day--today': day.isToday }">
+        <div class="my-week__day-header">
+          <span class="my-week__day-label">
+            {{ day.fullLabel }}, {{ day.dateLabel }}
+            <span v-if="day.isToday" class="my-week__today-tag">Today</span>
+          </span>
+          <span v-if="dayTasks(day.date).length" class="my-week__day-count">{{ dayTasks(day.date).length }}</span>
+        </div>
+        <div v-if="dayTasks(day.date).length === 0" class="my-week__empty-day">No tasks</div>
+        <div v-for="task in dayTasks(day.date)" :key="'d-' + task.id" class="my-week__task" :class="{ 'my-week__task--done': task.done }">
+          <span class="my-week__task-dot" :class="{ 'my-week__task-dot--done': task.done }"></span>
+          <span class="my-week__task-title">{{ task.title }}</span>
+          <span v-if="task.projectName" class="my-week__task-project">{{ task.projectName }}</span>
+          <span v-for="label in (task.labels || [])" :key="label.id" class="my-week__task-label" :style="{ background: '#' + label.color }" :title="label.title"></span>
         </div>
       </div>
+
     </div>
   </section>
 </template>
@@ -58,46 +59,89 @@ export default {
   name: "MyWeekWidget",
   props: {
     tasks: { type: Array, default: function () { return []; } },
-    schedule: { type: Object, default: function () { return { dueToday: 0, dueThisWeek: 0, noDueDate: 0 }; } },
-    timeline: { type: Array, default: function () { return []; } },
   },
   data: function () {
     return { collapsed: false };
   },
   computed: {
-    nextMilestoneLabel: function () {
-      var milestones = this.timeline.filter(function (t) { return t.itemType === "milestone"; });
-      if (milestones.length === 0) return "\u2014";
-      var now = new Date();
-      now.setHours(0, 0, 0, 0);
-      var upcoming = milestones.filter(function (m) {
-        var d = m.endDate || m.startDate;
-        return d && new Date(d) >= now;
-      }).sort(function (a, b) {
-        return new Date(a.endDate || a.startDate) - new Date(b.endDate || b.startDate);
-      });
-      if (upcoming.length === 0) return "\u2014";
-      return upcoming[0].label;
+    today: function () {
+      var d = new Date();
+      return this.toIso(d);
     },
-    sortedTimeline: function () {
-      return this.timeline.slice().sort(function (a, b) {
-        var da = a.startDate || a.endDate || "";
-        var db = b.startDate || b.endDate || "";
-        return da.localeCompare(db);
+    mondayDate: function () {
+      var d = new Date();
+      var day = d.getDay();
+      var diff = day === 0 ? -6 : 1 - day;
+      var mon = new Date(d);
+      mon.setDate(mon.getDate() + diff);
+      mon.setHours(0, 0, 0, 0);
+      return mon;
+    },
+    weekDays: function () {
+      var days = [];
+      var dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(this.mondayDate);
+        d.setDate(d.getDate() + i);
+        var iso = this.toIso(d);
+        days.push({
+          fullLabel: dayNames[i],
+          dateLabel: months[d.getMonth()] + " " + d.getDate(),
+          date: iso,
+          isToday: iso === this.today,
+        });
+      }
+      return days;
+    },
+    tasksByDate: function () {
+      var map = {};
+      this.tasks.forEach(function (task) {
+        if (!task.duedate) return;
+        var iso = task.duedate.substring(0, 10);
+        if (!map[iso]) map[iso] = [];
+        map[iso].push(task);
       });
+      return map;
+    },
+    overdueTasks: function () {
+      var today = this.today;
+      var monday = this.weekDays.length ? this.weekDays[0].date : today;
+      return this.tasks.filter(function (t) {
+        if (!t.duedate || t.done) return false;
+        var iso = t.duedate.substring(0, 10);
+        return iso < monday;
+      });
+    },
+    sundayDate: function () {
+      return this.weekDays.length ? this.weekDays[6].date : this.today;
+    },
+    totalThisWeek: function () {
+      var self = this;
+      var monday = this.weekDays.length ? this.weekDays[0].date : this.today;
+      var sunday = this.sundayDate;
+      var count = 0;
+      this.tasks.forEach(function (t) {
+        if (!t.duedate) return;
+        var iso = t.duedate.substring(0, 10);
+        if (iso >= monday && iso <= sunday) count++;
+      });
+      return count + this.overdueTasks.length;
     },
   },
   methods: {
-    formatRange: function (item) {
-      var s = item.startDate ? this.shortDate(item.startDate) : "";
-      var e = item.endDate ? this.shortDate(item.endDate) : "";
-      if (item.itemType === "milestone") return s || e || "\u2014";
-      if (s && e && s !== e) return s + " \u2013 " + e;
-      return s || e || "\u2014";
+    dayTasks: function (dateIso) {
+      return this.tasksByDate[dateIso] || [];
+    },
+    toIso: function (d) {
+      var y = d.getFullYear();
+      var m = d.getMonth() + 1;
+      var day = d.getDate();
+      return y + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day);
     },
     shortDate: function (iso) {
       if (!iso) return "";
-      var d = new Date(iso + "T00:00:00");
+      var d = new Date(iso.substring(0, 10) + "T00:00:00");
       var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       return months[d.getMonth()] + " " + d.getDate();
     },
@@ -122,126 +166,167 @@ export default {
   user-select: none;
   transition: background 0.15s;
 }
-.my-week__header:hover {
-  background: #fafbfd;
-}
+.my-week__header:hover { background: #fafbfd; }
 .my-week__title {
   font-size: 15px;
   font-weight: 700;
   color: var(--color-text-primary, #1a1a2e);
-  margin: 0;
-  padding: 0;
-  border: none;
+  margin: 0; padding: 0; border: none;
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.my-week__title svg {
-  color: #0ea5e9;
+.my-week__title svg { color: #0ea5e9; }
+.my-week__badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 8px;
+  border-radius: 8px;
 }
 .my-week__chevron {
   color: var(--color-text-muted, #9ca3af);
   transition: transform 0.3s;
 }
-.my-week__chevron--rotated {
-  transform: rotate(180deg);
-}
+.my-week__chevron--rotated { transform: rotate(180deg); }
 .my-week__body {
   padding: 0 var(--spacing-lg, 24px) var(--spacing-lg, 24px);
 }
-.my-week__summary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+
+/* Day group */
+.my-week__day {
+  border-radius: 10px;
+  margin-bottom: 6px;
+  overflow: hidden;
 }
-.my-week__section {
+.my-week__day-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 8px 12px;
   background: #f9fafb;
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
 }
-.my-week__section-label {
+.my-week__day:last-child { margin-bottom: 0; }
+.my-week__day-label {
   font-size: 12px;
+  font-weight: 600;
   color: var(--color-text-secondary, #6b7280);
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.my-week__section-value {
-  font-size: 13px;
+.my-week__day-count {
+  font-size: 11px;
   font-weight: 700;
-  color: var(--color-text-primary, #1a1a2e);
+  background: #e5e7eb;
+  color: #374151;
+  padding: 1px 7px;
+  border-radius: 8px;
+  min-width: 16px;
+  text-align: center;
 }
 
-/* Timeline */
-.my-week__sub-title {
-  font-size: 12px;
+/* Today highlight */
+.my-week__day--today .my-week__day-header {
+  background: #eff6ff;
+}
+.my-week__day--today .my-week__day-label {
+  color: #1d4ed8;
   font-weight: 700;
-  color: var(--color-text-secondary, #6b7280);
+}
+.my-week__day--today .my-week__day-count {
+  background: #3b82f6;
+  color: #fff;
+}
+.my-week__today-tag {
+  font-size: 10px;
+  font-weight: 700;
+  background: #3b82f6;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 10px 0;
-  padding: 0;
-  border: none;
+  letter-spacing: 0.03em;
 }
-.my-week__timeline {
-  border-top: 1px solid #f3f4f6;
-  padding-top: 14px;
+
+/* Overdue group */
+.my-week__day--overdue .my-week__day-header {
+  background: #fef2f2;
 }
-.my-week__tl-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px 0;
-  position: relative;
+.my-week__day--overdue .my-week__day-label {
+  color: #b91c1c;
+  font-weight: 700;
 }
-.my-week__tl-item + .my-week__tl-item {
-  border-top: 1px solid #f9fafb;
+.my-week__day--overdue .my-week__day-count {
+  background: #ef4444;
+  color: #fff;
 }
-.my-week__tl-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 3px;
+
+/* Empty day */
+.my-week__empty-day {
+  padding: 6px 12px 8px;
+  font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
+  font-style: italic;
 }
-.my-week__tl-content {
-  flex: 1;
-  min-width: 0;
-}
-.my-week__tl-row {
+
+/* Task row */
+.my-week__task {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 2px;
+  padding: 6px 12px;
+  transition: background 0.1s;
 }
-.my-week__tl-label {
+.my-week__task:hover { background: #f9fafb; }
+.my-week__task--done { opacity: 0.5; }
+.my-week__task--done .my-week__task-title {
+  text-decoration: line-through;
+}
+
+.my-week__task-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+}
+.my-week__task-dot--done { background: #22c55e; }
+.my-week__task-dot--overdue { background: #ef4444; }
+
+.my-week__task-title {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-text-primary, #1a1a2e);
+  flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
-.my-week__tl-badge {
+.my-week__task-project {
   font-size: 10px;
   font-weight: 600;
+  background: #f3f4f6;
+  color: #6b7280;
   padding: 1px 6px;
-  border-radius: 6px;
-  text-transform: capitalize;
+  border-radius: 4px;
+  white-space: nowrap;
   flex-shrink: 0;
 }
-.my-week__tl-badge--phase {
-  background: #e0f2fe;
-  color: #0369a1;
+.my-week__task-label {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
-.my-week__tl-badge--milestone {
-  background: #fef3c7;
-  color: #92400e;
-}
-.my-week__tl-date {
-  font-size: 11px;
-  color: var(--color-text-muted, #9ca3af);
+.my-week__task-due {
+  font-size: 10px;
+  color: #ef4444;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 </style>
