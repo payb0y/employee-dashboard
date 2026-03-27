@@ -58,9 +58,20 @@
           </a>
         </div>
 
-        <!-- Timeline for this project -->
-        <div v-if="projectTimeline.length > 0" class="project-drawer__section">
-          <h5 class="project-drawer__section-title">Timeline</h5>
+        <!-- Tab navigation -->
+        <div class="project-drawer__tabs">
+          <button v-for="tab in tabs" :key="tab.key"
+            class="project-drawer__tab"
+            :class="{ 'project-drawer__tab--active': activeTab === tab.key }"
+            @click="activeTab = tab.key">
+            {{ tab.label }}
+            <span v-if="tab.count !== undefined" class="project-drawer__tab-count">{{ tab.count }}</span>
+          </button>
+        </div>
+
+        <!-- Tab: Timeline -->
+        <div v-if="activeTab === 'timeline'" class="project-drawer__tab-body">
+          <div v-if="projectTimeline.length === 0" class="project-drawer__empty-tab">No timeline items.</div>
           <div v-for="item in projectTimeline" :key="item.id" class="project-drawer__tl-item">
             <span class="project-drawer__tl-dot" :style="{ background: item.color || '#94a3b8' }"></span>
             <div class="project-drawer__tl-content">
@@ -71,9 +82,76 @@
           </div>
         </div>
 
-        <!-- Activity feed -->
-        <div v-if="projectEvents.length > 0" class="project-drawer__section">
-          <h5 class="project-drawer__section-title">Activity</h5>
+        <!-- Tab: Files -->
+        <div v-if="activeTab === 'files'" class="project-drawer__tab-body">
+          <div v-if="!project.folderId" class="project-drawer__empty-tab">No shared folder linked to this project.</div>
+          <template v-else>
+            <div v-if="filesLoading" class="project-drawer__empty-tab">Loading files&hellip;</div>
+            <div v-else-if="files.length === 0" class="project-drawer__empty-tab">Folder is empty.</div>
+            <div v-else class="project-drawer__file-list">
+              <div v-for="file in files" :key="file.name" class="project-drawer__file-item">
+                <div class="project-drawer__file-icon">
+                  <svg v-if="file.type === 'folder'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a90d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                </div>
+                <div class="project-drawer__file-info">
+                  <a :href="fileUrl(file)" class="project-drawer__file-name" target="_blank" rel="noopener">{{ file.name }}</a>
+                  <span class="project-drawer__file-meta">
+                    <span v-if="file.type !== 'folder'">{{ humanSize(file.size) }}</span>
+                    <span>{{ formatTimestamp(file.mtime) }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Tab: Notes -->
+        <div v-if="activeTab === 'notes'" class="project-drawer__tab-body">
+          <!-- New note form -->
+          <div class="project-drawer__note-form">
+            <input v-model="newNoteTitle" class="project-drawer__note-input" placeholder="Note title" />
+            <textarea v-model="newNoteContent" class="project-drawer__note-textarea" placeholder="Write your note..." rows="3"></textarea>
+            <button class="project-drawer__note-save" :disabled="!newNoteTitle.trim() || noteSaving" @click="saveNewNote">
+              {{ noteSaving ? 'Saving...' : 'Add Note' }}
+            </button>
+          </div>
+
+          <div v-if="projectNotes.length === 0 && !newNoteTitle" class="project-drawer__empty-tab">No notes yet. Add one above.</div>
+
+          <div v-for="note in projectNotes" :key="note.id" class="project-drawer__note-card">
+            <!-- View mode -->
+            <template v-if="editingNoteId !== note.id">
+              <div class="project-drawer__note-header">
+                <strong class="project-drawer__note-title">{{ note.title }}</strong>
+                <div class="project-drawer__note-actions">
+                  <button class="project-drawer__note-action" @click="startEditNote(note)" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="project-drawer__note-action project-drawer__note-action--danger" @click="removeNote(note.id)" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              </div>
+              <p v-if="note.content" class="project-drawer__note-content">{{ note.content }}</p>
+              <span class="project-drawer__note-meta">{{ note.userId }} &middot; {{ timeAgo(note.updatedAt || note.createdAt) }}</span>
+            </template>
+
+            <!-- Edit mode -->
+            <template v-else>
+              <input v-model="editNoteTitle" class="project-drawer__note-input" />
+              <textarea v-model="editNoteContent" class="project-drawer__note-textarea" rows="3"></textarea>
+              <div class="project-drawer__note-edit-actions">
+                <button class="project-drawer__note-save" :disabled="!editNoteTitle.trim()" @click="saveEditNote(note.id)">Save</button>
+                <button class="project-drawer__note-cancel" @click="editingNoteId = null">Cancel</button>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Tab: Activity -->
+        <div v-if="activeTab === 'activity'" class="project-drawer__tab-body">
+          <div v-if="projectEvents.length === 0" class="project-drawer__empty-tab">No activity recorded.</div>
           <div class="project-drawer__activity">
             <div v-for="event in projectEvents" :key="event.id" class="project-drawer__event">
               <div class="project-drawer__event-dot"></div>
@@ -93,15 +171,32 @@
 </template>
 
 <script>
+import axios from "@nextcloud/axios";
+import { generateUrl } from "@nextcloud/router";
+
 export default {
   name: "ProjectDrawerWidget",
   props: {
     project: { type: Object, default: null },
     timeline: { type: Array, default: function () { return []; } },
     activityEvents: { type: Array, default: function () { return []; } },
+    notes: { type: Array, default: function () { return []; } },
   },
   data: function () {
-    return { collapsed: false };
+    return {
+      collapsed: false,
+      activeTab: "timeline",
+      files: [],
+      filesLoading: false,
+      filesLoadedFor: null,
+      newNoteTitle: "",
+      newNoteContent: "",
+      noteSaving: false,
+      editingNoteId: null,
+      editNoteTitle: "",
+      editNoteContent: "",
+      localNotes: [],
+    };
   },
   computed: {
     folderUrl: function () {
@@ -122,15 +217,140 @@ export default {
       var pid = this.project.id;
       return this.activityEvents.filter(function (e) { return e.projectId === pid; });
     },
+    projectNotes: function () {
+      if (!this.project) return [];
+      var pid = this.project.id;
+      return this.localNotes.filter(function (n) { return n.projectId === pid; });
+    },
+    tabs: function () {
+      return [
+        { key: "timeline", label: "Timeline", count: this.projectTimeline.length },
+        { key: "files", label: "Files", count: this.project && this.project.folderId ? undefined : 0 },
+        { key: "notes", label: "Notes", count: this.projectNotes.length },
+        { key: "activity", label: "Activity", count: this.projectEvents.length },
+      ];
+    },
   },
   watch: {
     project: function (val) {
       if (val && this.collapsed) {
         this.collapsed = false;
       }
+      this.activeTab = "timeline";
+      this.editingNoteId = null;
+      this.newNoteTitle = "";
+      this.newNoteContent = "";
+      if (val && val.folderId && this.filesLoadedFor !== val.id) {
+        this.loadFiles(val);
+      }
+    },
+    notes: {
+      handler: function (val) {
+        this.localNotes = val ? val.slice() : [];
+      },
+      immediate: true,
+    },
+    activeTab: function (tab) {
+      if (tab === "files" && this.project && this.project.folderId && this.filesLoadedFor !== this.project.id) {
+        this.loadFiles(this.project);
+      }
     },
   },
   methods: {
+    loadFiles: function (proj) {
+      if (!proj || !proj.folderPath) return;
+      var self = this;
+      this.filesLoading = true;
+      this.files = [];
+      var url = generateUrl("/apps/employee_dashboard/api/files");
+      axios.get(url, { params: { path: proj.folderPath } })
+        .then(function (res) {
+          self.files = res.data || [];
+          self.filesLoadedFor = proj.id;
+        })
+        .catch(function () {
+          self.files = [];
+        })
+        .then(function () {
+          self.filesLoading = false;
+        });
+    },
+    fileUrl: function (file) {
+      if (file.type === "folder") {
+        return OC.generateUrl("/apps/files/?dir=" + encodeURIComponent("/" + file.path));
+      }
+      return OC.generateUrl("/apps/files/?dir=" + encodeURIComponent("/" + file.path.replace(/\/[^/]+$/, "")) + "&openfile=true");
+    },
+    humanSize: function (bytes) {
+      if (!bytes || bytes <= 0) return "0 B";
+      var units = ["B", "KB", "MB", "GB"];
+      var i = 0;
+      var val = bytes;
+      while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+      return (i === 0 ? val : val.toFixed(1)) + " " + units[i];
+    },
+    formatTimestamp: function (ts) {
+      if (!ts) return "";
+      var d = new Date(ts * 1000);
+      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return months[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+    },
+
+    // Notes CRUD
+    saveNewNote: function () {
+      if (!this.newNoteTitle.trim() || !this.project) return;
+      var self = this;
+      this.noteSaving = true;
+      var url = generateUrl("/apps/employee_dashboard/api/notes");
+      axios.post(url, {
+        projectId: this.project.id,
+        title: this.newNoteTitle,
+        content: this.newNoteContent,
+      }).then(function (res) {
+        self.localNotes.unshift(res.data);
+        self.newNoteTitle = "";
+        self.newNoteContent = "";
+      }).catch(function () {
+        alert("Failed to save note");
+      }).then(function () {
+        self.noteSaving = false;
+      });
+    },
+    startEditNote: function (note) {
+      this.editingNoteId = note.id;
+      this.editNoteTitle = note.title;
+      this.editNoteContent = note.content || "";
+    },
+    saveEditNote: function (noteId) {
+      if (!this.editNoteTitle.trim()) return;
+      var self = this;
+      var url = generateUrl("/apps/employee_dashboard/api/notes/" + noteId);
+      axios.put(url, {
+        title: this.editNoteTitle,
+        content: this.editNoteContent,
+      }).then(function () {
+        var idx = self.localNotes.findIndex(function (n) { return n.id === noteId; });
+        if (idx !== -1) {
+          self.localNotes[idx].title = self.editNoteTitle;
+          self.localNotes[idx].content = self.editNoteContent;
+          self.localNotes[idx].updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
+        }
+        self.editingNoteId = null;
+      }).catch(function () {
+        alert("Failed to update note");
+      });
+    },
+    removeNote: function (noteId) {
+      if (!confirm("Delete this note?")) return;
+      var self = this;
+      var url = generateUrl("/apps/employee_dashboard/api/notes/" + noteId);
+      axios.delete(url).then(function () {
+        self.localNotes = self.localNotes.filter(function (n) { return n.id !== noteId; });
+      }).catch(function () {
+        alert("Failed to delete note");
+      });
+    },
+
     statusLabel: function (status) {
       var map = { 0: "Active", 1: "Completed", 2: "Archived" };
       return map[status] || "Active";
@@ -207,30 +427,22 @@ export default {
   user-select: none;
   transition: background 0.15s;
 }
-.project-drawer__header:hover {
-  background: #fafbfd;
-}
+.project-drawer__header:hover { background: #fafbfd; }
 .project-drawer__title {
   font-size: 15px;
   font-weight: 700;
   color: var(--color-text-primary, #1a1a2e);
-  margin: 0;
-  padding: 0;
-  border: none;
+  margin: 0; padding: 0; border: none;
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.project-drawer__title svg {
-  color: #c878c8;
-}
+.project-drawer__title svg { color: #c878c8; }
 .project-drawer__chevron {
   color: var(--color-text-muted, #9ca3af);
   transition: transform 0.3s;
 }
-.project-drawer__chevron--rotated {
-  transform: rotate(180deg);
-}
+.project-drawer__chevron--rotated { transform: rotate(180deg); }
 .project-drawer__body {
   padding: 0 var(--spacing-lg, 24px) var(--spacing-lg, 24px);
 }
@@ -253,9 +465,7 @@ export default {
   font-size: 16px;
   font-weight: 700;
   color: var(--color-text-primary, #1a1a2e);
-  margin: 0;
-  padding: 0;
-  border: none;
+  margin: 0; padding: 0; border: none;
   flex: 1;
 }
 .project-drawer__project-status {
@@ -265,18 +475,9 @@ export default {
   border-radius: 6px;
   flex-shrink: 0;
 }
-.project-drawer__project-status--active {
-  background: #dcfce7;
-  color: #166534;
-}
-.project-drawer__project-status--completed {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-.project-drawer__project-status--archived {
-  background: #f3f4f6;
-  color: #6b7280;
-}
+.project-drawer__project-status--active { background: #dcfce7; color: #166534; }
+.project-drawer__project-status--completed { background: #e0f2fe; color: #0369a1; }
+.project-drawer__project-status--archived { background: #f3f4f6; color: #6b7280; }
 
 /* Meta grid */
 .project-drawer__meta-grid {
@@ -332,13 +533,60 @@ export default {
   background: #e8f0fe;
   transition: background 0.15s;
 }
-.project-drawer__link:hover {
-  background: #d4e5fb;
+.project-drawer__link:hover { background: #d4e5fb; }
+
+/* Tabs */
+.project-drawer__tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 2px solid #f3f4f6;
+  margin-bottom: 14px;
+}
+.project-drawer__tab {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.project-drawer__tab:hover { color: var(--color-text-primary, #1a1a2e); }
+.project-drawer__tab--active {
+  color: #4a90d9;
+  border-bottom-color: #4a90d9;
+}
+.project-drawer__tab-count {
+  font-size: 10px;
+  font-weight: 700;
+  background: #f3f4f6;
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+.project-drawer__tab--active .project-drawer__tab-count {
+  background: #e8f0fe;
+  color: #4a90d9;
+}
+.project-drawer__tab-body {
+  min-height: 60px;
+}
+.project-drawer__empty-tab {
+  text-align: center;
+  padding: 20px 0;
+  font-size: 13px;
+  color: var(--color-text-muted, #9ca3af);
+  font-style: italic;
 }
 
 /* Section titles */
 .project-drawer__section {
-  margin-top: 16px;
+  margin-bottom: 14px;
 }
 .project-drawer__section-title {
   font-size: 12px;
@@ -346,7 +594,7 @@ export default {
   color: var(--color-text-secondary, #6b7280);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
   padding: 0;
   border: none;
 }
@@ -358,9 +606,7 @@ export default {
   gap: 10px;
   padding: 6px 0;
 }
-.project-drawer__tl-item + .project-drawer__tl-item {
-  border-top: 1px solid #f9fafb;
-}
+.project-drawer__tl-item + .project-drawer__tl-item { border-top: 1px solid #f9fafb; }
 .project-drawer__tl-dot {
   width: 8px;
   height: 8px;
@@ -387,16 +633,158 @@ export default {
   border-radius: 4px;
   text-transform: capitalize;
 }
-.project-drawer__tl-badge--phase {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-.project-drawer__tl-badge--milestone {
-  background: #fef3c7;
-  color: #92400e;
-}
+.project-drawer__tl-badge--phase { background: #e0f2fe; color: #0369a1; }
+.project-drawer__tl-badge--milestone { background: #fef3c7; color: #92400e; }
 .project-drawer__tl-date {
   font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* File browser */
+.project-drawer__file-list {
+  display: flex;
+  flex-direction: column;
+}
+.project-drawer__file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+.project-drawer__file-item:hover { background: #f9fafb; }
+.project-drawer__file-icon {
+  flex-shrink: 0;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.project-drawer__file-info {
+  flex: 1;
+  min-width: 0;
+}
+.project-drawer__file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary, #1a1a2e);
+  text-decoration: none;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-drawer__file-name:hover { color: #4a90d9; text-decoration: underline; }
+.project-drawer__file-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* Notes */
+.project-drawer__note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+.project-drawer__note-input {
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  outline: none;
+  font-family: inherit;
+}
+.project-drawer__note-input:focus { border-color: #4a90d9; }
+.project-drawer__note-textarea {
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.project-drawer__note-textarea:focus { border-color: #4a90d9; }
+.project-drawer__note-save {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #4a90d9;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.project-drawer__note-save:hover { background: #3b7fc7; }
+.project-drawer__note-save:disabled { opacity: 0.5; cursor: default; }
+.project-drawer__note-cancel {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+}
+.project-drawer__note-edit-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.project-drawer__note-card {
+  padding: 12px;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.project-drawer__note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.project-drawer__note-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a1a2e);
+}
+.project-drawer__note-actions {
+  display: flex;
+  gap: 4px;
+}
+.project-drawer__note-action {
+  background: none;
+  border: none;
+  padding: 3px;
+  cursor: pointer;
+  color: var(--color-text-muted, #9ca3af);
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.project-drawer__note-action:hover { color: #4a90d9; background: #f0f4ff; }
+.project-drawer__note-action--danger:hover { color: #d94040; background: #fef2f2; }
+.project-drawer__note-content {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.6;
+  margin: 0 0 4px 0;
+  white-space: pre-wrap;
+}
+.project-drawer__note-meta {
+  font-size: 10px;
   color: var(--color-text-muted, #9ca3af);
 }
 
@@ -411,9 +799,7 @@ export default {
   padding: 8px 0;
   position: relative;
 }
-.project-drawer__event + .project-drawer__event {
-  border-top: 1px solid #f9fafb;
-}
+.project-drawer__event + .project-drawer__event { border-top: 1px solid #f9fafb; }
 .project-drawer__event-dot {
   width: 6px;
   height: 6px;
@@ -433,10 +819,7 @@ export default {
   color: var(--color-text-secondary, #6b7280);
   line-height: 1.4;
 }
-.project-drawer__event-text strong {
-  color: var(--color-text-primary, #1a1a2e);
-  font-weight: 600;
-}
+.project-drawer__event-text strong { color: var(--color-text-primary, #1a1a2e); font-weight: 600; }
 .project-drawer__event-time {
   font-size: 10px;
   color: var(--color-text-muted, #9ca3af);

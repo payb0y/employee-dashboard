@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace OCA\EmployeeDashboard\Service;
 
 use OCP\IDBConnection;
+use OCP\Files\IRootFolder;
 
 class EmployeeService {
 
     private IDBConnection $db;
+    private IRootFolder $rootFolder;
 
-    public function __construct(IDBConnection $db) {
+    public function __construct(IDBConnection $db, IRootFolder $rootFolder) {
         $this->db = $db;
+        $this->rootFolder = $rootFolder;
     }
 
     public function getDashboardData(string $uid): array {
@@ -34,6 +37,7 @@ class EmployeeService {
             'timeline'     => $this->fetchTimeline($projectIds),
             'resources'       => $this->computeResources($projects, $projectIds),
             'activityEvents'  => $this->fetchActivityEvents($projectIds),
+            'notes'           => $this->fetchNotes($projectIds),
         ];
     }
 
@@ -500,6 +504,122 @@ class EmployeeService {
             'nextMilestone' => $nextMilestone,
         ];
     }
+
+    // ── Notes ─────────────────────────────────────────────────────
+
+    private function fetchNotes(array $projectIds): array {
+        if (empty($projectIds)) {
+            return [];
+        }
+        $ph  = implode(',', array_fill(0, count($projectIds), '?'));
+        $sql = "SELECT id, project_id, user_id, title, content, visibility,
+                       created_at, updated_at
+                FROM *PREFIX*project_notes
+                WHERE project_id IN ({$ph})
+                ORDER BY updated_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($projectIds);
+
+        $items = [];
+        while ($row = $stmt->fetch()) {
+            $items[] = [
+                'id'         => (int)$row['id'],
+                'projectId'  => (int)$row['project_id'],
+                'userId'     => $row['user_id'],
+                'title'      => $row['title'],
+                'content'    => $row['content'],
+                'visibility' => $row['visibility'],
+                'createdAt'  => $row['created_at'],
+                'updatedAt'  => $row['updated_at'],
+            ];
+        }
+        return $items;
+    }
+
+    public function createNote(string $uid, int $projectId, string $title, string $content, string $visibility = 'public'): array {
+        $now = (new \DateTime())->format('Y-m-d H:i:s');
+        $sql = "INSERT INTO *PREFIX*project_notes (project_id, user_id, title, content, visibility, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$projectId, $uid, $title, $content, $visibility, $now, $now]);
+        $id = (int)$this->db->lastInsertId('*PREFIX*project_notes');
+
+        return [
+            'id'         => $id,
+            'projectId'  => $projectId,
+            'userId'     => $uid,
+            'title'      => $title,
+            'content'    => $content,
+            'visibility' => $visibility,
+            'createdAt'  => $now,
+            'updatedAt'  => $now,
+        ];
+    }
+
+    public function updateNote(int $noteId, string $uid, string $title, string $content): bool {
+        $now = (new \DateTime())->format('Y-m-d H:i:s');
+        $sql = "UPDATE *PREFIX*project_notes SET title = ?, content = ?, updated_at = ?
+                WHERE id = ? AND user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$title, $content, $now, $noteId, $uid]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function deleteNote(int $noteId, string $uid): bool {
+        $sql = "DELETE FROM *PREFIX*project_notes WHERE id = ? AND user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$noteId, $uid]);
+        return $stmt->rowCount() > 0;
+    }
+
+    // ── File listing ─────────────────────────────────────────────
+
+    public function listFolderContents(string $uid, string $folderPath): array {
+        try {
+            $userFolder = $this->rootFolder->getUserFolder($uid);
+        } catch (\Exception $e) {
+            return [];
+        }
+
+        $cleanPath = trim($folderPath, '/');
+        if ($cleanPath === '') {
+            return [];
+        }
+
+        try {
+            $folder = $userFolder->get($cleanPath);
+        } catch (\OCP\Files\NotFoundException $e) {
+            return [];
+        }
+
+        if (!($folder instanceof \OCP\Files\Folder)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($folder->getDirectoryListing() as $node) {
+            $isFolder = $node instanceof \OCP\Files\Folder;
+            $items[] = [
+                'name'     => $node->getName(),
+                'size'     => $node->getSize(),
+                'type'     => $isFolder ? 'folder' : 'file',
+                'mtime'    => $node->getMTime(),
+                'mimetype' => $isFolder ? 'httpd/unix-directory' : ($node instanceof \OCP\Files\File ? $node->getMimeType() : ''),
+                'path'     => $cleanPath . '/' . $node->getName(),
+            ];
+        }
+
+        usort($items, function ($a, $b) {
+            if ($a['type'] !== $b['type']) {
+                return $a['type'] === 'folder' ? -1 : 1;
+            }
+            return strcasecmp($a['name'], $b['name']);
+        });
+
+        return $items;
+    }
+
+    // ── Activity Events ──────────────────────────────────────────
 
     private function fetchActivityEvents(array $projectIds): array {
         if (empty($projectIds)) {

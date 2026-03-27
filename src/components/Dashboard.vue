@@ -36,11 +36,14 @@
       <!-- B. My Week Panel -->
       <MyWeekWidget :tasks="data.tasks" :schedule="data.schedule" :timeline="data.timeline" />
 
+      <!-- B2. Gantt Chart -->
+      <GanttWidget :timeline="data.timeline" :projects="data.projects" />
+
       <!-- C. My Projects Workspace -->
       <ProjectsWorkspaceWidget :projects="data.projects" @select-project="onSelectProject" />
 
       <!-- D. Project Context Drawer -->
-      <ProjectDrawerWidget :project="selectedProject" :timeline="data.timeline" :activity-events="data.activityEvents || []" />
+      <ProjectDrawerWidget :project="selectedProject" :timeline="data.timeline" :activity-events="data.activityEvents || []" :notes="data.notes || []" />
 
       <!-- E. Resources / Notes -->
       <ResourcesWidget :resources="data.resources" />
@@ -55,6 +58,7 @@ import WorkloadWidget from "./WorkloadWidget.vue";
 import ScheduleWidget from "./ScheduleWidget.vue";
 import TasksBoardWidget from "./TasksBoardWidget.vue";
 import MyWeekWidget from "./MyWeekWidget.vue";
+import GanttWidget from "./GanttWidget.vue";
 import ProjectsWorkspaceWidget from "./ProjectsWorkspaceWidget.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
 import ResourcesWidget from "./ResourcesWidget.vue";
@@ -68,6 +72,7 @@ export default {
     ScheduleWidget,
     TasksBoardWidget,
     MyWeekWidget,
+    GanttWidget,
     ProjectsWorkspaceWidget,
     ProjectDrawerWidget,
     ResourcesWidget,
