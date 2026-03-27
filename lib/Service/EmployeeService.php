@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace OCA\EmployeeDashboard\Service;
 
 use OCP\IDBConnection;
-use OCP\Files\IRootFolder;
 
 class EmployeeService {
 
     private IDBConnection $db;
-    private IRootFolder $rootFolder;
 
-    public function __construct(IDBConnection $db, IRootFolder $rootFolder) {
+    public function __construct(IDBConnection $db) {
         $this->db = $db;
-        $this->rootFolder = $rootFolder;
     }
 
     public function getDashboardData(string $uid): array {
@@ -538,48 +535,33 @@ class EmployeeService {
 
     // ── File listing ─────────────────────────────────────────────
 
-    public function listFolderContents(string $uid, string $folderPath): array {
-        try {
-            $userFolder = $this->rootFolder->getUserFolder($uid);
-        } catch (\Exception $e) {
+    public function listFolderContents(int $folderId, string $folderPath): array {
+        if ($folderId <= 0) {
             return [];
         }
+
+        $sql = "SELECT f.fileid, f.name, f.size, f.mtime, m.mimetype
+                FROM *PREFIX*filecache f
+                JOIN *PREFIX*mimetypes m ON m.id = f.mimetype
+                WHERE f.parent = ?
+                ORDER BY (m.mimetype = 'httpd/unix-directory') DESC, f.name ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$folderId]);
 
         $cleanPath = trim($folderPath, '/');
-        if ($cleanPath === '') {
-            return [];
-        }
-
-        try {
-            $folder = $userFolder->get($cleanPath);
-        } catch (\OCP\Files\NotFoundException $e) {
-            return [];
-        }
-
-        if (!($folder instanceof \OCP\Files\Folder)) {
-            return [];
-        }
-
         $items = [];
-        foreach ($folder->getDirectoryListing() as $node) {
-            $isFolder = $node instanceof \OCP\Files\Folder;
+        while ($row = $stmt->fetch()) {
+            $isFolder = $row['mimetype'] === 'httpd/unix-directory';
             $items[] = [
-                'name'     => $node->getName(),
-                'size'     => $node->getSize(),
+                'id'       => (int)$row['fileid'],
+                'name'     => $row['name'],
+                'size'     => (int)$row['size'],
                 'type'     => $isFolder ? 'folder' : 'file',
-                'mtime'    => $node->getMTime(),
-                'mimetype' => $isFolder ? 'httpd/unix-directory' : ($node instanceof \OCP\Files\File ? $node->getMimeType() : ''),
-                'path'     => $cleanPath . '/' . $node->getName(),
+                'mtime'    => (int)$row['mtime'],
+                'mimetype' => $row['mimetype'],
+                'path'     => $cleanPath . '/' . $row['name'],
             ];
         }
-
-        usort($items, function ($a, $b) {
-            if ($a['type'] !== $b['type']) {
-                return $a['type'] === 'folder' ? -1 : 1;
-            }
-            return strcasecmp($a['name'], $b['name']);
-        });
-
         return $items;
     }
 

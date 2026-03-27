@@ -44,15 +44,13 @@ class DashboardController extends Controller {
      * @NoCSRFRequired
      */
     public function listFiles(): JSONResponse {
-        $user = $this->userSession->getUser();
-        $uid  = $user ? $user->getUID() : '';
-
-        $path = (string)$this->request->getParam('path', '');
-        if ($path === '') {
-            return new JSONResponse(['error' => 'path is required'], 400);
+        $folderId = (int)$this->request->getParam('folderId', 0);
+        $folderPath = (string)$this->request->getParam('folderPath', '');
+        if ($folderId <= 0) {
+            return new JSONResponse(['error' => 'folderId is required'], 400);
         }
 
-        $files = $this->employeeService->listFolderContents($uid, $path);
+        $files = $this->employeeService->listFolderContents($folderId, $folderPath);
         return new JSONResponse($files);
     }
 }

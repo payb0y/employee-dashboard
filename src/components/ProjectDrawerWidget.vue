@@ -213,12 +213,12 @@ export default {
   },
   methods: {
     loadFiles: function (proj) {
-      if (!proj || !proj.folderPath) return;
+      if (!proj || !proj.folderId) return;
       var self = this;
       this.filesLoading = true;
       this.files = [];
       var url = generateUrl("/apps/employee_dashboard/api/files");
-      axios.get(url, { params: { path: proj.folderPath } })
+      axios.get(url, { params: { folderId: proj.folderId, folderPath: proj.folderPath || "" } })
         .then(function (res) {
           self.files = res.data || [];
           self.filesLoadedFor = proj.id;
