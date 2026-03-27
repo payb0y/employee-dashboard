@@ -32,7 +32,8 @@ class EmployeeService {
             'tasks'        => $this->buildTaskList($cards, $projects),
             'projects'     => $this->formatProjects($projects),
             'timeline'     => $this->fetchTimeline($projectIds),
-            'resources'    => $this->computeResources($projects, $projectIds),
+            'resources'       => $this->computeResources($projects, $projectIds),
+            'activityEvents'  => $this->fetchActivityEvents($projectIds),
         ];
     }
 
@@ -498,5 +499,33 @@ class EmployeeService {
             'noDueDate'     => $noDueDate,
             'nextMilestone' => $nextMilestone,
         ];
+    }
+
+    private function fetchActivityEvents(array $projectIds): array {
+        if (empty($projectIds)) {
+            return [];
+        }
+        $ph  = implode(',', array_fill(0, count($projectIds), '?'));
+        $sql = "SELECT id, project_id, actor_uid, actor_display_name,
+                       event_type, payload_json, occurred_at
+                FROM *PREFIX*project_activity_events
+                WHERE project_id IN ({$ph})
+                ORDER BY occurred_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($projectIds);
+
+        $items = [];
+        while ($row = $stmt->fetch()) {
+            $items[] = [
+                'id'          => (int)$row['id'],
+                'projectId'   => (int)$row['project_id'],
+                'actorUid'    => $row['actor_uid'],
+                'actorName'   => $row['actor_display_name'],
+                'eventType'   => $row['event_type'],
+                'payload'     => json_decode($row['payload_json'] ?? '{}', true),
+                'occurredAt'  => $row['occurred_at'],
+            ];
+        }
+        return $items;
     }
 }

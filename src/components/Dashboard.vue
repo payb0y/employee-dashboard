@@ -37,10 +37,10 @@
       <MyWeekWidget :tasks="data.tasks" :schedule="data.schedule" :timeline="data.timeline" />
 
       <!-- C. My Projects Workspace -->
-      <ProjectsWorkspaceWidget :projects="data.projects" />
+      <ProjectsWorkspaceWidget :projects="data.projects" @select-project="onSelectProject" />
 
-      <!-- D. Project Context Drawer placeholder -->
-      <ProjectDrawerWidget />
+      <!-- D. Project Context Drawer -->
+      <ProjectDrawerWidget :project="selectedProject" :timeline="data.timeline" :activity-events="data.activityEvents || []" />
 
       <!-- E. Resources / Notes -->
       <ResourcesWidget :resources="data.resources" />
@@ -78,6 +78,7 @@ export default {
   data: function () {
     return {
       focusFilter: null,
+      selectedProject: null,
     };
   },
   methods: {
@@ -90,6 +91,9 @@ export default {
           el.$el.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       });
+    },
+    onSelectProject: function (project) {
+      this.selectedProject = project;
     },
   },
 };

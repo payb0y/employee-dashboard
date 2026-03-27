@@ -16,7 +16,7 @@
       <div class="resources-widget__grid">
         <div class="resources-widget__item">
           <span class="resources-widget__item-value">{{ resources.files }}</span>
-          <span class="resources-widget__item-label">Files</span>
+          <span class="resources-widget__item-label">Shared Folders</span>
         </div>
         <div class="resources-widget__item">
           <span class="resources-widget__item-value">{{ resources.notes }}</span>
