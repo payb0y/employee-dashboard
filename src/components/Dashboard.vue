@@ -53,23 +53,20 @@
         </div>
       </section>
 
-      <!-- A. My Tasks Board -->
-      <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" />
-
-      <!-- B. My Week Panel -->
+      <!-- A. My Week Panel -->
       <MyWeekWidget :tasks="filteredTasks" />
 
+      <!-- B. My Tasks Board -->
+      <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" />
+
       <!-- B2. Gantt Chart -->
-      <GanttWidget :timeline="filteredTimeline" :projects="filteredProjects" />
+      <GanttWidget v-if="activeProjectId === null" :timeline="filteredTimeline" :projects="filteredProjects" />
 
       <!-- C. My Projects Workspace -->
-      <ProjectsWorkspaceWidget :projects="filteredProjects" @select-project="onSelectProject" />
+      <ProjectsWorkspaceWidget v-if="activeProjectId === null" :projects="filteredProjects" @select-project="onSelectProject" />
 
       <!-- D. Project Context Drawer -->
       <ProjectDrawerWidget :project="selectedProject" :timeline="data.timeline" :activity-events="data.activityEvents || []" :notes="data.notes || []" />
-
-      <!-- E. Resources / Notes -->
-      <ResourcesWidget :resources="data.resources" />
     </template>
   </div>
 </template>
@@ -84,7 +81,6 @@ import MyWeekWidget from "./MyWeekWidget.vue";
 import GanttWidget from "./GanttWidget.vue";
 import ProjectsWorkspaceWidget from "./ProjectsWorkspaceWidget.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
-import ResourcesWidget from "./ResourcesWidget.vue";
 
 export default {
   name: "Dashboard",
@@ -98,7 +94,6 @@ export default {
     GanttWidget,
     ProjectsWorkspaceWidget,
     ProjectDrawerWidget,
-    ResourcesWidget,
   },
   props: {
     data: { type: Object, required: true },
@@ -196,7 +191,10 @@ export default {
     },
     onProjectFilter: function (projectId) {
       this.activeProjectId = projectId;
-      if (projectId !== null && this.selectedProject && this.selectedProject.id !== projectId) {
+      if (projectId !== null) {
+        var match = this.data.projects.find(function (p) { return p.id === projectId; });
+        this.selectedProject = match || null;
+      } else {
         this.selectedProject = null;
       }
     },
