@@ -72,14 +72,38 @@
         <!-- Tab: Timeline -->
         <div v-if="activeTab === 'timeline'" class="project-drawer__tab-body">
           <div v-if="projectTimeline.length === 0" class="project-drawer__empty-tab">No timeline items.</div>
-          <div v-for="item in projectTimeline" :key="item.id" class="project-drawer__tl-item">
-            <span class="project-drawer__tl-dot" :style="{ background: item.color || '#94a3b8' }"></span>
-            <div class="project-drawer__tl-content">
-              <span class="project-drawer__tl-label">{{ item.label }}</span>
-              <span class="project-drawer__tl-badge" :class="'project-drawer__tl-badge--' + item.itemType">{{ item.itemType }}</span>
-              <span class="project-drawer__tl-date">{{ formatRange(item) }}</span>
+          <template v-else>
+            <div class="pd-gantt">
+              <!-- Date axis -->
+              <div class="pd-gantt__axis">
+                <div class="pd-gantt__label-col"></div>
+                <div class="pd-gantt__bar-col">
+                  <div class="pd-gantt__ticks">
+                    <span v-for="(tick, i) in drawerDateTicks" :key="i" class="pd-gantt__tick" :style="{ left: tick.pct + '%' }">{{ tick.label }}</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Today line (full-height) -->
+              <div v-if="drawerTodayPct !== null" class="pd-gantt__today-line" :style="{ left: 'calc(120px + ' + (drawerTodayPct / 100).toFixed(4) + ' * (100% - 120px))' }">
+                <span class="pd-gantt__today-pill">Today</span>
+              </div>
+              <!-- Rows -->
+              <div v-for="item in projectTimeline" :key="item.id" class="pd-gantt__row">
+                <div class="pd-gantt__label-col">
+                  <span class="pd-gantt__item-label" :title="item.label">{{ item.label }}</span>
+                  <span class="pd-gantt__item-type" :class="'pd-gantt__item-type--' + item.itemType">{{ item.itemType }}</span>
+                </div>
+                <div class="pd-gantt__bar-col">
+                  <div v-if="item.itemType === 'phase'" class="pd-gantt__bar" :style="drawerBarStyle(item)" :title="item.label + ': ' + formatRange(item)">
+                    <span class="pd-gantt__bar-text">{{ formatRange(item) }}</span>
+                  </div>
+                  <div v-else class="pd-gantt__milestone" :style="drawerMilestoneStyle(item)" :title="item.label + ': ' + shortDate(item.startDate || item.endDate)">
+                    <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0 14,7 7,14 0,7" :fill="item.color || '#f59e0b'" /></svg>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </template>
         </div>
 
         <!-- Tab: Notes -->
@@ -162,6 +186,44 @@ export default {
         { key: "activity", label: "Activity", count: this.projectEvents.length },
       ];
     },
+    drawerDateRange: function () {
+      var min = null;
+      var max = null;
+      this.projectTimeline.forEach(function (item) {
+        var dates = [item.startDate, item.endDate].filter(Boolean);
+        dates.forEach(function (d) {
+          var ts = new Date(d + "T00:00:00").getTime();
+          if (min === null || ts < min) min = ts;
+          if (max === null || ts > max) max = ts;
+        });
+      });
+      if (min === null) return { min: 0, max: 0, span: 0 };
+      var pad = 4 * 86400000;
+      min -= pad;
+      max += pad;
+      return { min: min, max: max, span: max - min };
+    },
+    drawerTodayPct: function () {
+      if (!this.drawerDateRange.span) return null;
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+      var ts = today.getTime();
+      if (ts < this.drawerDateRange.min || ts > this.drawerDateRange.max) return null;
+      return ((ts - this.drawerDateRange.min) / this.drawerDateRange.span) * 100;
+    },
+    drawerDateTicks: function () {
+      var range = this.drawerDateRange;
+      if (!range.span) return [];
+      var ticks = [];
+      var count = 5;
+      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      for (var i = 0; i <= count; i++) {
+        var ts = range.min + (range.span * i / count);
+        var d = new Date(ts);
+        ticks.push({ pct: (i / count) * 100, label: months[d.getMonth()] + " " + d.getDate() });
+      }
+      return ticks;
+    },
   },
   watch: {
     project: function (val) {
@@ -214,6 +276,21 @@ export default {
         whiteboard_linked: "linked a whiteboard",
       };
       return typeMap[event.eventType] || event.eventType.replace(/_/g, " ");
+    },
+    drawerDatePct: function (isoDate) {
+      if (!isoDate || !this.drawerDateRange.span) return 0;
+      var ts = new Date(isoDate + "T00:00:00").getTime();
+      return ((ts - this.drawerDateRange.min) / this.drawerDateRange.span) * 100;
+    },
+    drawerBarStyle: function (item) {
+      var left = this.drawerDatePct(item.startDate || item.endDate);
+      var right = this.drawerDatePct(item.endDate || item.startDate);
+      var width = Math.max(right - left, 1);
+      return { left: left + "%", width: width + "%", background: item.color || "#3b82f6" };
+    },
+    drawerMilestoneStyle: function (item) {
+      var pct = this.drawerDatePct(item.startDate || item.endDate);
+      return { left: "calc(" + pct + "% - 7px)" };
     },
     timeAgo: function (iso) {
       if (!iso) return "";
@@ -420,45 +497,121 @@ export default {
   border: none;
 }
 
-/* Timeline items */
-.project-drawer__tl-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 6px 0;
+/* Drawer Gantt chart */
+.pd-gantt {
+  position: relative;
+  overflow-x: auto;
+  min-width: 0;
+  margin-bottom: 4px;
 }
-.project-drawer__tl-item + .project-drawer__tl-item { border-top: 1px solid #f9fafb; }
-.project-drawer__tl-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 4px;
-}
-.project-drawer__tl-content {
+.pd-gantt__axis,
+.pd-gantt__row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  min-height: 28px;
+}
+.pd-gantt__label-col {
+  width: 120px;
+  min-width: 120px;
+  flex-shrink: 0;
+  padding-right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+}
+.pd-gantt__bar-col {
   flex: 1;
+  position: relative;
+  min-width: 200px;
+  height: 100%;
 }
-.project-drawer__tl-label {
-  font-size: 13px;
-  font-weight: 600;
+.pd-gantt__ticks {
+  position: relative;
+  height: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.pd-gantt__tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--color-text-muted, #9ca3af);
+  white-space: nowrap;
+}
+.pd-gantt__today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+  z-index: 3;
+  pointer-events: none;
+}
+.pd-gantt__today-pill {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
+}
+.pd-gantt__row {
+  min-height: 30px;
+  padding: 2px 0;
+}
+.pd-gantt__row:hover { background: #fafbfd; }
+.pd-gantt__item-label {
+  font-size: 11px;
+  font-weight: 500;
   color: var(--color-text-primary, #1a1a2e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 78px;
 }
-.project-drawer__tl-badge {
+.pd-gantt__item-type {
   font-size: 9px;
   font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
   text-transform: capitalize;
+  flex-shrink: 0;
 }
-.project-drawer__tl-badge--phase { background: #e0f2fe; color: #0369a1; }
-.project-drawer__tl-badge--milestone { background: #fef3c7; color: #92400e; }
-.project-drawer__tl-date {
-  font-size: 11px;
-  color: var(--color-text-muted, #9ca3af);
+.pd-gantt__item-type--phase { background: #e0f2fe; color: #0369a1; }
+.pd-gantt__item-type--milestone { background: #fef3c7; color: #92400e; }
+.pd-gantt__bar {
+  position: absolute;
+  top: 4px;
+  height: 20px;
+  border-radius: 5px;
+  min-width: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  overflow: hidden;
+  opacity: 0.88;
+  transition: opacity 0.15s;
+}
+.pd-gantt__row:hover .pd-gantt__bar { opacity: 1; }
+.pd-gantt__bar-text {
+  font-size: 9px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.pd-gantt__milestone {
+  position: absolute;
+  top: 6px;
 }
 
 /* Notes */

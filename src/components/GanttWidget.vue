@@ -31,14 +31,9 @@
             </div>
           </div>
 
-          <!-- Today marker -->
-          <div v-if="todayPct !== null" class="gantt-chart__today-wrap">
-            <div class="gantt-chart__label-col"></div>
-            <div class="gantt-chart__bar-col" style="position: relative;">
-              <div class="gantt-chart__today" :style="{ left: todayPct + '%' }">
-                <span class="gantt-chart__today-label">Today</span>
-              </div>
-            </div>
+          <!-- Today marker (full-height) -->
+          <div v-if="todayPct !== null" class="gantt-chart__today-line" :style="{ left: 'calc(160px + ' + (todayPct / 100).toFixed(4) + ' * (100% - 160px))' }">
+            <span class="gantt-chart__today-pill">Today</span>
           </div>
 
           <!-- Grouped by project -->
@@ -236,11 +231,11 @@ export default {
 
 /* Chart */
 .gantt-chart {
+  position: relative;
   overflow-x: auto;
   min-width: 0;
 }
 .gantt-chart__axis,
-.gantt-chart__today-wrap,
 .gantt-chart__group-header,
 .gantt-chart__row {
   display: flex;
@@ -278,24 +273,31 @@ export default {
   white-space: nowrap;
 }
 
-/* Today */
-.gantt-chart__today {
+/* Today — full-height line */
+.gantt-chart__today-line {
   position: absolute;
-  top: -2px;
-  bottom: -2px;
+  top: 0;
+  bottom: 0;
   width: 2px;
   background: #ef4444;
-  z-index: 2;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+  z-index: 3;
+  pointer-events: none;
 }
-.gantt-chart__today-label {
+.gantt-chart__today-pill {
   position: absolute;
-  top: -14px;
+  top: 3px;
   left: 50%;
   transform: translateX(-50%);
+  background: #ef4444;
+  color: #fff;
   font-size: 9px;
   font-weight: 700;
-  color: #ef4444;
+  padding: 2px 6px;
+  border-radius: 4px;
   white-space: nowrap;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
 }
 
 /* Group header */
