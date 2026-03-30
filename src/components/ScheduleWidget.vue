@@ -12,11 +12,11 @@
       <span class="schedule-widget__title">Schedule</span>
     </div>
     <div class="schedule-widget__body">
-      <div class="schedule-widget__row">
+      <div class="schedule-widget__row schedule-widget__row--clickable" @click="$emit('filter', 'Today')">
         <span class="schedule-widget__label">Due Today</span>
         <span class="schedule-widget__value">{{ schedule.dueToday }}</span>
       </div>
-      <div class="schedule-widget__row">
+      <div class="schedule-widget__row schedule-widget__row--clickable" @click="$emit('filter', 'Upcoming')">
         <span class="schedule-widget__label">This Week</span>
         <span class="schedule-widget__value">{{ schedule.dueThisWeek }}</span>
       </div>
@@ -92,5 +92,15 @@ export default {
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text-primary, #1a1a2e);
+}
+.schedule-widget__row--clickable {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: 0 -6px;
+  transition: background 0.15s;
+}
+.schedule-widget__row--clickable:hover {
+  background: #f3f4f6;
 }
 </style>

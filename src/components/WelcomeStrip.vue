@@ -11,13 +11,13 @@
       </div>
     </div>
     <div class="welcome-strip__right">
-      <span v-if="focusNow.overdue > 0" class="welcome-strip__badge welcome-strip__badge--danger">
+      <span v-if="focusNow.overdue > 0" class="welcome-strip__badge welcome-strip__badge--danger welcome-strip__badge--clickable" @click="$emit('filter', 'Overdue')">
         {{ focusNow.overdue }} overdue
       </span>
-      <span v-if="focusNow.dueToday > 0" class="welcome-strip__badge welcome-strip__badge--warning">
+      <span v-if="focusNow.dueToday > 0" class="welcome-strip__badge welcome-strip__badge--warning welcome-strip__badge--clickable" @click="$emit('filter', 'Today')">
         {{ focusNow.dueToday }} due today
       </span>
-      <span class="welcome-strip__badge welcome-strip__badge--info">
+      <span class="welcome-strip__badge welcome-strip__badge--info welcome-strip__badge--clickable" @click="$emit('filter', 'All Open')">
         {{ workload.open }} open
       </span>
     </div>
@@ -113,6 +113,14 @@ export default {
 .welcome-strip__badge--info {
   background: #e8f0fe;
   color: #1e4a8a;
+}
+.welcome-strip__badge--clickable {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.welcome-strip__badge--clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 @media (max-width: 700px) {
   .welcome-strip {

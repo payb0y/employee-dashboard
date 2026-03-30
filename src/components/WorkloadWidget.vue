@@ -9,11 +9,11 @@
       <span class="workload-widget__title">Workload</span>
     </div>
     <div class="workload-widget__body">
-      <div class="workload-widget__row">
+      <div class="workload-widget__row workload-widget__row--clickable" @click="$emit('filter', 'All Open')">
         <span class="workload-widget__label">Open</span>
         <span class="workload-widget__value">{{ workload.open }}</span>
       </div>
-      <div class="workload-widget__row">
+      <div class="workload-widget__row workload-widget__row--clickable" @click="$emit('filter', 'Done')">
         <span class="workload-widget__label">Done</span>
         <span class="workload-widget__value">{{ workload.done }}</span>
       </div>
@@ -89,5 +89,15 @@ export default {
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text-primary, #1a1a2e);
+}
+.workload-widget__row--clickable {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: 0 -6px;
+  transition: background 0.15s;
+}
+.workload-widget__row--clickable:hover {
+  background: #f3f4f6;
 }
 </style>

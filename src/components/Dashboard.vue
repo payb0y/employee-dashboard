@@ -19,7 +19,7 @@
 
     <template v-else>
       <!-- 1. Welcome Strip -->
-      <WelcomeStrip :employee="data.employee" :organization="data.organization" :focus-now="derivedFocusNow" :workload="derivedWorkload" />
+      <WelcomeStrip :employee="data.employee" :organization="data.organization" :focus-now="derivedFocusNow" :workload="derivedWorkload" @filter="onFocusFilter" />
 
       <!-- Project Filter -->
       <div class="emp-dashboard__project-filter">
@@ -48,8 +48,8 @@
       <section class="emp-dashboard__focus-row">
         <FocusNowWidget :focus="derivedFocusNow" @filter="onFocusFilter" />
         <div class="emp-dashboard__focus-side">
-          <WorkloadWidget :workload="derivedWorkload" />
-          <ScheduleWidget :schedule="derivedSchedule" />
+          <WorkloadWidget :workload="derivedWorkload" @filter="onFocusFilter" />
+          <ScheduleWidget :schedule="derivedSchedule" @filter="onFocusFilter" />
         </div>
       </section>
 

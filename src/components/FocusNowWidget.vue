@@ -11,11 +11,11 @@
     </div>
     <div class="focus-widget__body">
       <div class="focus-widget__stats">
-        <div class="focus-widget__stat focus-widget__stat--danger">
+        <div class="focus-widget__stat focus-widget__stat--danger focus-widget__stat--clickable" @click="$emit('filter', 'Overdue')">
           <span class="focus-widget__stat-value">{{ focus.overdue }}</span>
           <span class="focus-widget__stat-label">Overdue</span>
         </div>
-        <div class="focus-widget__stat focus-widget__stat--warning">
+        <div class="focus-widget__stat focus-widget__stat--warning focus-widget__stat--clickable" @click="$emit('filter', 'Today')">
           <span class="focus-widget__stat-value">{{ focus.dueToday }}</span>
           <span class="focus-widget__stat-label">Due Today</span>
         </div>
@@ -102,6 +102,14 @@ export default {
 }
 .focus-widget__stat--warning {
   background: #fffbeb;
+}
+.focus-widget__stat--clickable {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.focus-widget__stat--clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .focus-widget__stat-value {
   display: block;

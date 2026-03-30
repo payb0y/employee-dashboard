@@ -500,7 +500,7 @@ export default {
 /* Drawer Gantt chart */
 .pd-gantt {
   position: relative;
-  overflow-x: auto;
+  overflow: hidden;
   min-width: 0;
   margin-bottom: 4px;
 }

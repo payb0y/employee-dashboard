@@ -232,7 +232,7 @@ export default {
 /* Chart */
 .gantt-chart {
   position: relative;
-  overflow-x: auto;
+  overflow: hidden;
   min-width: 0;
 }
 .gantt-chart__axis,
