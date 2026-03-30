@@ -23,7 +23,7 @@
           <span class="my-week__day-label">Overdue</span>
           <span class="my-week__day-count">{{ overdueTasks.length }}</span>
         </div>
-        <div v-for="task in overdueTasks" :key="'o-' + task.id" class="my-week__task" :class="{ 'my-week__task--done': task.done }">
+        <div v-for="task in overdueTasks" :key="'o-' + task.id" class="my-week__task my-week__task--clickable" :class="{ 'my-week__task--done': task.done }" @click="$emit('select-task', task.id)">
           <span class="my-week__task-dot my-week__task-dot--overdue"></span>
           <span class="my-week__task-title">{{ task.title }}</span>
           <span v-if="task.projectName" class="my-week__task-project">{{ task.projectName }}</span>
@@ -42,7 +42,7 @@
           <span v-if="dayTasks(day.date).length" class="my-week__day-count">{{ dayTasks(day.date).length }}</span>
         </div>
         <div v-if="dayTasks(day.date).length === 0" class="my-week__empty-day">No tasks</div>
-        <div v-for="task in dayTasks(day.date)" :key="'d-' + task.id" class="my-week__task" :class="{ 'my-week__task--done': task.done }">
+        <div v-for="task in dayTasks(day.date)" :key="'d-' + task.id" class="my-week__task my-week__task--clickable" :class="{ 'my-week__task--done': task.done }" @click="$emit('select-task', task.id)">
           <span class="my-week__task-dot" :class="{ 'my-week__task-dot--done': task.done }"></span>
           <span class="my-week__task-title">{{ task.title }}</span>
           <span v-if="task.projectName" class="my-week__task-project">{{ task.projectName }}</span>
@@ -281,6 +281,7 @@ export default {
   transition: background 0.1s;
 }
 .my-week__task:hover { background: #f9fafb; }
+.my-week__task--clickable { cursor: pointer; }
 .my-week__task--done { opacity: 0.5; }
 .my-week__task--done .my-week__task-title {
   text-decoration: line-through;

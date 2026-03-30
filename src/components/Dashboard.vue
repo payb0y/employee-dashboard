@@ -54,7 +54,7 @@
       </section>
 
       <!-- A. My Week Panel -->
-      <MyWeekWidget :tasks="filteredTasks" />
+      <MyWeekWidget :tasks="filteredTasks" @select-task="onSelectTask" />
 
       <!-- B. My Tasks Board -->
       <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" />
@@ -188,6 +188,19 @@ export default {
     },
     onSelectProject: function (project) {
       this.selectedProject = project;
+    },
+    onSelectTask: function (taskId) {
+      var self = this;
+      var task = this.filteredTasks.find(function (t) { return t.id === taskId; });
+      if (!task) return;
+      var tab = task.done ? "Done" : "All Open";
+      this.focusFilter = { tab: tab, taskId: taskId, ts: Date.now() };
+      this.$nextTick(function () {
+        var el = self.$refs.tasksBoard;
+        if (el && el.$el) {
+          el.$el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
     },
     onProjectFilter: function (projectId) {
       this.activeProjectId = projectId;

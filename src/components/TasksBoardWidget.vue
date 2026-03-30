@@ -209,6 +209,21 @@ export default {
         this.activeTab = val.tab;
         this.currentPage = 1;
         this.search = "";
+        this.selectedTaskId = null;
+
+        if (val.taskId) {
+          var self = this;
+          this.$nextTick(function () {
+            var idx = -1;
+            for (var i = 0; i < self.filteredTasks.length; i++) {
+              if (self.filteredTasks[i].id === val.taskId) { idx = i; break; }
+            }
+            if (idx >= 0) {
+              self.currentPage = Math.floor(idx / self.pageSize) + 1;
+              self.selectedTaskId = val.taskId;
+            }
+          });
+        }
       }
     },
   },
