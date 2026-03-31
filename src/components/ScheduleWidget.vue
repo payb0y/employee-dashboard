@@ -20,7 +20,7 @@
         <span class="schedule-widget__label">This Week</span>
         <span class="schedule-widget__value">{{ schedule.dueThisWeek }}</span>
       </div>
-      <div class="schedule-widget__row">
+      <div class="schedule-widget__row schedule-widget__row--clickable" @click="$emit('filter', 'No Due Date')">
         <span class="schedule-widget__label">No Due Date</span>
         <span class="schedule-widget__value">{{ schedule.noDueDate }}</span>
       </div>

@@ -197,7 +197,7 @@ export default {
     return {
       activeTab: "All Open",
       search: "",
-      tabs: ["All Open", "Overdue", "Today", "Upcoming", "Done"],
+      tabs: ["All Open", "Overdue", "Today", "Upcoming", "No Due Date", "Done"],
       selectedTaskId: null,
       currentPage: 1,
       pageSize: 5,
@@ -232,7 +232,7 @@ export default {
       var now = new Date();
       var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       var todayEnd = new Date(todayStart.getTime() + 86400000);
-      var counts = { "All Open": 0, "Overdue": 0, "Today": 0, "Upcoming": 0, "Done": 0 };
+      var counts = { "All Open": 0, "Overdue": 0, "Today": 0, "Upcoming": 0, "No Due Date": 0, "Done": 0 };
 
       for (var i = 0; i < this.tasks.length; i++) {
         var t = this.tasks[i];
@@ -243,6 +243,8 @@ export default {
           if (d < todayStart) counts["Overdue"]++;
           else if (d < todayEnd) counts["Today"]++;
           else counts["Upcoming"]++;
+        } else {
+          counts["No Due Date"]++;
         }
       }
       return counts;
@@ -259,6 +261,7 @@ export default {
           case "Overdue": return !t.done && t.duedate && new Date(t.duedate) < todayStart;
           case "Today": return !t.done && t.duedate && new Date(t.duedate) >= todayStart && new Date(t.duedate) < todayEnd;
           case "Upcoming": return !t.done && t.duedate && new Date(t.duedate) >= todayEnd;
+          case "No Due Date": return !t.done && !t.duedate;
           case "All Open": return !t.done;
           case "Done": return !!t.done;
           default: return true;

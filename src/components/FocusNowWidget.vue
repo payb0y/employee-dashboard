@@ -20,13 +20,13 @@
           <span class="focus-widget__stat-label">Due Today</span>
         </div>
       </div>
-      <div class="focus-widget__next">
+      <div class="focus-widget__next" :class="{ 'focus-widget__row--clickable': focus.nextTask }" @click="focus.nextTask && $emit('select-task', focus.nextTask.id)">
         <span class="focus-widget__next-label">Next Task</span>
         <span class="focus-widget__next-value">
           {{ focus.nextTask ? focus.nextTask.title : '— none —' }}
         </span>
       </div>
-      <div class="focus-widget__oldest">
+      <div class="focus-widget__oldest" :class="{ 'focus-widget__row--clickable': focus.oldestTask }" @click="focus.oldestTask && $emit('select-task', focus.oldestTask.id)">
         <span class="focus-widget__oldest-label">Oldest Open</span>
         <span class="focus-widget__oldest-value">
           {{ focus.oldestTask ? focus.oldestTask.title : '— none —' }}
@@ -110,6 +110,13 @@ export default {
 .focus-widget__stat--clickable:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.focus-widget__row--clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.focus-widget__row--clickable:hover {
+  background: #eef2ff;
 }
 .focus-widget__stat-value {
   display: block;

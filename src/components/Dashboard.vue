@@ -46,7 +46,7 @@
 
       <!-- 2. Primary Focus Area -->
       <section class="emp-dashboard__focus-row">
-        <FocusNowWidget :focus="derivedFocusNow" @filter="onFocusFilter" />
+        <FocusNowWidget :focus="derivedFocusNow" @filter="onFocusFilter" @select-task="onSelectTask" />
         <div class="emp-dashboard__focus-side">
           <WorkloadWidget :workload="derivedWorkload" @filter="onFocusFilter" />
           <ScheduleWidget :schedule="derivedSchedule" @filter="onFocusFilter" />
