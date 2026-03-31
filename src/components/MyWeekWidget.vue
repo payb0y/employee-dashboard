@@ -26,7 +26,7 @@
         <div v-for="task in overdueTasks" :key="'o-' + task.id" class="my-week__task my-week__task--clickable" :class="{ 'my-week__task--done': task.done }" @click="$emit('select-task', task.id)">
           <span class="my-week__task-dot my-week__task-dot--overdue"></span>
           <span class="my-week__task-title">{{ task.title }}</span>
-          <span v-if="task.projectName" class="my-week__task-project">{{ task.projectName }}</span>
+          <span v-if="task.projectName" class="my-week__task-project my-week__task-project--clickable" @click.stop="$emit('filter-project', task.projectId)">{{ task.projectName }}</span>
           <span v-for="label in (task.labels || [])" :key="label.id" class="my-week__task-label" :style="{ background: '#' + label.color }" :title="label.title"></span>
           <span class="my-week__task-due">{{ shortDate(task.duedate) }}</span>
         </div>
@@ -45,7 +45,7 @@
         <div v-for="task in dayTasks(day.date)" :key="'d-' + task.id" class="my-week__task my-week__task--clickable" :class="{ 'my-week__task--done': task.done }" @click="$emit('select-task', task.id)">
           <span class="my-week__task-dot" :class="{ 'my-week__task-dot--done': task.done }"></span>
           <span class="my-week__task-title">{{ task.title }}</span>
-          <span v-if="task.projectName" class="my-week__task-project">{{ task.projectName }}</span>
+          <span v-if="task.projectName" class="my-week__task-project my-week__task-project--clickable" @click.stop="$emit('filter-project', task.projectId)">{{ task.projectName }}</span>
           <span v-for="label in (task.labels || [])" :key="label.id" class="my-week__task-label" :style="{ background: '#' + label.color }" :title="label.title"></span>
         </div>
       </div>
@@ -316,6 +316,14 @@ export default {
   border-radius: 4px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+.my-week__task-project--clickable {
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.my-week__task-project--clickable:hover {
+  background: #e8f0fe;
+  color: #1e4a8a;
 }
 .my-week__task-label {
   width: 8px;

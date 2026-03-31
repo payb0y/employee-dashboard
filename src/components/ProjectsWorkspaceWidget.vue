@@ -21,7 +21,7 @@
           v-for="project in projects"
           :key="project.id"
           class="projects-workspace__card"
-          :class="{ 'projects-workspace__card--selected': selectedId === project.id }"
+          :class="{ 'projects-workspace__card--active-filter': activeProjectId === project.id }"
           @click="selectProject(project)"
         >
           <div class="projects-workspace__card-header">
@@ -54,17 +54,17 @@ export default {
   name: "ProjectsWorkspaceWidget",
   props: {
     projects: { type: Array, default: function () { return []; } },
+    activeProjectId: { type: Number, default: null },
   },
   data: function () {
     return {
       collapsed: false,
-      selectedId: null,
     };
   },
   methods: {
     selectProject: function (project) {
-      this.selectedId = this.selectedId === project.id ? null : project.id;
-      this.$emit("select-project", this.selectedId === project.id ? project : null);
+      var newId = this.activeProjectId === project.id ? null : project.id;
+      this.$emit("filter-project", newId);
     },
     statusLabel: function (status) {
       var map = { 0: "Active", 1: "Completed", 2: "Archived" };
@@ -141,24 +141,29 @@ export default {
   color: var(--color-text-muted, #9ca3af);
 }
 .projects-workspace__grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
   gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 .projects-workspace__card {
+  min-width: 200px;
+  max-width: 260px;
+  flex-shrink: 0;
   border: 1px solid #f3f4f6;
   border-radius: 10px;
   padding: 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   cursor: pointer;
 }
 .projects-workspace__card:hover {
   border-color: #e0e3e9;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
-.projects-workspace__card--selected {
+.projects-workspace__card--active-filter {
   border-color: #4a90d9;
-  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.15);
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+  background: #f0f7ff;
 }
 .projects-workspace__card-header {
   display: flex;
@@ -227,10 +232,5 @@ export default {
 }
 .projects-workspace__card-stat--link svg {
   color: #4a90d9;
-}
-@media (max-width: 700px) {
-  .projects-workspace__grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

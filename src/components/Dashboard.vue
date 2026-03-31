@@ -21,30 +21,19 @@
       <!-- 1. Welcome Strip -->
       <WelcomeStrip :employee="data.employee" :organization="data.organization" :focus-now="derivedFocusNow" :workload="derivedWorkload" @filter="onFocusFilter" />
 
-      <!-- Project Filter -->
-      <div class="emp-dashboard__project-filter">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Active Project Filter Chip -->
+      <div v-if="activeProjectId !== null && activeProjectName" class="emp-dashboard__filter-chip">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
         </svg>
-        <label class="emp-dashboard__filter-label" for="project-filter-select">Project</label>
-        <select
-          id="project-filter-select"
-          class="emp-dashboard__filter-select"
-          :value="activeProjectId === null ? '' : String(activeProjectId)"
-          @change="onProjectFilter($event.target.value === '' ? null : parseInt($event.target.value, 10))"
-        >
-          <option value="">All Projects</option>
-          <option v-for="p in data.projects" :key="p.id" :value="String(p.id)">{{ p.name }}</option>
-        </select>
-        <button
-          v-if="activeProjectId !== null"
-          class="emp-dashboard__filter-clear"
-          title="Clear filter"
-          @click="onProjectFilter(null)"
-        >&times;</button>
+        Filtering: <strong>{{ activeProjectName }}</strong>
+        <button class="emp-dashboard__filter-chip-clear" title="Clear filter" @click="onProjectFilter(null)">&times;</button>
       </div>
 
-      <!-- 2. Primary Focus Area -->
+      <!-- 2. My Projects -->
+      <ProjectsWorkspaceWidget :projects="data.projects" :active-project-id="activeProjectId" @filter-project="onProjectFilter" />
+
+      <!-- 3. Primary Focus Area -->
       <section class="emp-dashboard__focus-row">
         <FocusNowWidget :focus="derivedFocusNow" @filter="onFocusFilter" @select-task="onSelectTask" />
         <div class="emp-dashboard__focus-side">
@@ -54,16 +43,13 @@
       </section>
 
       <!-- A. My Week Panel -->
-      <MyWeekWidget :tasks="filteredTasks" @select-task="onSelectTask" />
+      <MyWeekWidget :tasks="filteredTasks" @select-task="onSelectTask" @filter-project="onProjectFilter" />
 
       <!-- B. My Tasks Board -->
-      <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" />
+      <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" @filter-project="onProjectFilter" />
 
       <!-- B2. Gantt Chart -->
       <GanttWidget v-if="activeProjectId === null" :timeline="filteredTimeline" :projects="filteredProjects" />
-
-      <!-- C. My Projects Workspace -->
-      <ProjectsWorkspaceWidget v-if="activeProjectId === null" :projects="filteredProjects" @select-project="onSelectProject" />
 
       <!-- D. Project Context Drawer -->
       <ProjectDrawerWidget :project="selectedProject" :timeline="data.timeline" :activity-events="data.activityEvents || []" :notes="data.notes || []" />
@@ -174,6 +160,12 @@ export default {
         .forEach(function (i) { nextMilestone = { label: i.label, date: i.endDate }; });
       return { dueToday: dueToday, dueThisWeek: dueThisWeek, noDueDate: noDueDate, nextMilestone: nextMilestone };
     },
+    activeProjectName: function () {
+      if (this.activeProjectId === null) return null;
+      var pid = this.activeProjectId;
+      var match = this.data.projects.find(function (p) { return p.id === pid; });
+      return match ? match.name : null;
+    },
   },
   methods: {
     onFocusFilter: function (tab) {
@@ -185,9 +177,6 @@ export default {
           el.$el.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       });
-    },
-    onSelectProject: function (project) {
-      this.selectedProject = project;
     },
     onSelectTask: function (taskId) {
       var self = this;
@@ -394,54 +383,38 @@ export default {
   margin: 0;
 }
 
-.emp-dashboard__project-filter {
-  display: flex;
+.emp-dashboard__filter-chip {
+  display: inline-flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  border-left: 4px solid var(--color-purple);
-  color: var(--color-text-secondary);
-}
-.emp-dashboard__filter-label {
+  gap: 6px;
+  padding: 6px 12px;
+  margin-bottom: var(--spacing-md);
+  background: #e8f0fe;
+  color: #1e4a8a;
+  border-radius: 20px;
   font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-.emp-dashboard__filter-select {
-  flex: 1;
-  max-width: 260px;
-  padding: 6px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 13px;
   font-weight: 500;
-  color: var(--color-text-primary);
-  background: #fff;
-  cursor: pointer;
+  border: 1px solid #c3d9f4;
 }
-.emp-dashboard__filter-select:focus {
-  outline: none;
-  border-color: var(--color-blue);
+.emp-dashboard__filter-chip svg {
+  color: #4a90d9;
+  flex-shrink: 0;
 }
-.emp-dashboard__filter-clear {
-  width: 24px;
-  height: 24px;
+.emp-dashboard__filter-chip-clear {
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: #e5e7eb;
-  color: var(--color-text-secondary);
-  font-size: 16px;
+  background: #c3d9f4;
+  color: #1e4a8a;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  margin-left: 4px;
   transition: background 0.15s;
 }
-.emp-dashboard__filter-clear:hover {
+.emp-dashboard__filter-chip-clear:hover {
   background: var(--color-danger);
   color: #fff;
 }

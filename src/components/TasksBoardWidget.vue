@@ -65,7 +65,7 @@
               </div>
               <div class="tasks-board__item-row2">
                 <span class="tasks-board__item-stack">{{ task.stackTitle }}</span>
-                <span v-if="task.projectName" class="tasks-board__item-project">{{ task.projectName }}</span>
+                <span v-if="task.projectName" class="tasks-board__item-project tasks-board__item-project--clickable" @click.stop="$emit('filter-project', task.projectId)">{{ task.projectName }}</span>
                 <span v-if="task.commentCount > 0" class="tasks-board__item-meta">
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   {{ task.commentCount }}
@@ -142,7 +142,7 @@
 
                 <div v-if="task.projectName" class="task-detail__section">
                   <span class="task-detail__label">Project</span>
-                  <span class="task-detail__value">{{ task.projectName }}</span>
+                  <span class="task-detail__value task-detail__value--link" @click="$emit('filter-project', task.projectId)">{{ task.projectName }}</span>
                 </div>
 
                 <div class="task-detail__section">
@@ -399,6 +399,8 @@ export default {
 .tasks-board__item-row2 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tasks-board__item-stack { font-size: 10px; font-weight: 600; color: #6366f1; background: #eef2ff; padding: 1px 8px; border-radius: 6px; white-space: nowrap; }
 .tasks-board__item-project { font-size: 11px; color: var(--color-text-secondary, #6b7280); }
+.tasks-board__item-project--clickable { cursor: pointer; border-radius: 4px; padding: 1px 4px; margin: -1px -4px; transition: background 0.15s, color 0.15s; }
+.tasks-board__item-project--clickable:hover { background: #e8f0fe; color: #1e4a8a; }
 .tasks-board__item-meta { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--color-text-muted, #9ca3af); }
 
 /* Due date */
@@ -430,6 +432,8 @@ export default {
 .task-detail__label { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
 .task-detail__value { font-size: 13px; font-weight: 600; color: #1a1a2e; }
 .task-detail__value--small { font-size: 12px; font-weight: 500; color: #6b7280; }
+.task-detail__value--link { cursor: pointer; color: #4a90d9; }
+.task-detail__value--link:hover { text-decoration: underline; }
 .task-detail__due-rel { font-weight: 500; font-size: 11px; color: #6b7280; }
 .task-detail__empty { font-size: 12px; color: #9ca3af; margin: 0; font-style: italic; }
 
