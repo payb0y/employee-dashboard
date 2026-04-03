@@ -17,6 +17,18 @@
     </div>
     <div v-show="!collapsed" class="my-week__body">
 
+      <!-- Week navigation -->
+      <div class="my-week__nav">
+        <button class="my-week__nav-btn" title="Previous week" @click.stop="prevWeek">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+        <span class="my-week__nav-label">{{ weekLabel }}</span>
+        <button class="my-week__nav-btn" title="Next week" @click.stop="nextWeek">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+        </button>
+        <button v-if="!isCurrentWeek" class="my-week__nav-today" @click.stop="goToCurrentWeek">Today</button>
+      </div>
+
       <!-- Overdue -->
       <div v-if="overdueTasks.length > 0" class="my-week__day my-week__day--overdue">
         <div class="my-week__day-header">
@@ -61,7 +73,7 @@ export default {
     tasks: { type: Array, default: function () { return []; } },
   },
   data: function () {
-    return { collapsed: false };
+    return { collapsed: false, weekOffset: 0 };
   },
   computed: {
     today: function () {
@@ -73,9 +85,21 @@ export default {
       var day = d.getDay();
       var diff = day === 0 ? -6 : 1 - day;
       var mon = new Date(d);
-      mon.setDate(mon.getDate() + diff);
+      mon.setDate(mon.getDate() + diff + (this.weekOffset * 7));
       mon.setHours(0, 0, 0, 0);
       return mon;
+    },
+    weekLabel: function () {
+      var mon = this.mondayDate;
+      var sun = new Date(mon);
+      sun.setDate(sun.getDate() + 6);
+      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      var start = months[mon.getMonth()] + " " + mon.getDate();
+      var end = months[sun.getMonth()] + " " + sun.getDate() + ", " + sun.getFullYear();
+      return start + " – " + end;
+    },
+    isCurrentWeek: function () {
+      return this.weekOffset === 0;
     },
     weekDays: function () {
       var days = [];
@@ -139,6 +163,9 @@ export default {
       var day = d.getDate();
       return y + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day);
     },
+    prevWeek: function () { this.weekOffset--; },
+    nextWeek: function () { this.weekOffset++; },
+    goToCurrentWeek: function () { this.weekOffset = 0; },
     shortDate: function (iso) {
       if (!iso) return "";
       var d = new Date(iso.substring(0, 10) + "T00:00:00");
@@ -192,6 +219,53 @@ export default {
 .my-week__chevron--rotated { transform: rotate(180deg); }
 .my-week__body {
   padding: 0 var(--spacing-lg, 24px) var(--spacing-lg, 24px);
+}
+
+/* Week navigation */
+.my-week__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+.my-week__nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: none;
+  border: 1px solid var(--color-border, #e5e7eb);
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.my-week__nav-btn:hover {
+  background: #f3f4f6;
+  color: var(--color-text-primary, #1a1a2e);
+}
+.my-week__nav-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1a1a2e);
+}
+.my-week__nav-today {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.my-week__nav-today:hover {
+  background: #dbeafe;
 }
 
 /* Day group */
