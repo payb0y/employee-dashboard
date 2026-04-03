@@ -1,6 +1,4 @@
 <template>
-  <div>
-  <div ref="sentinel" class="proj-filter__sentinel"></div>
   <section class="proj-filter" :class="{ 'proj-filter--sticky': isSticky }">
     <div v-show="!isSticky" class="proj-filter__header" @click="collapsed = !collapsed">
       <h3 class="proj-filter__title">
@@ -93,7 +91,6 @@
       </div>
     </div>
   </section>
-  </div>
 </template>
 
 <script>
@@ -194,17 +191,33 @@ export default {
   },
   mounted: function () {
     var self = this;
-    this._observer = new IntersectionObserver(function (entries) {
-      self.isSticky = !entries[0].isIntersecting;
-      if (!self.isSticky) {
-        self.toolbarExpanded = false;
+    this._onScroll = function () {
+      // When sticky kicks in, the element's top will be 0 (or the sticky top value)
+      // Compare with the sentinel-like approach: check if element rect.top <= container top
+      var rect = self.$el.getBoundingClientRect();
+      var containerTop = 0;
+      if (self._scrollEl && self._scrollEl !== window) {
+        containerTop = self._scrollEl.getBoundingClientRect().top;
       }
-    }, { threshold: 0 });
-    this._observer.observe(this.$refs.sentinel);
+      // Stuck when the element is at the top edge (within 1px tolerance)
+      var stuck = rect.top <= containerTop + 1 && rect.bottom > containerTop;
+      if (stuck !== self.isSticky) {
+        self.isSticky = stuck;
+        if (!stuck) self.toolbarExpanded = false;
+      }
+    };
+    // Try #app-content first (Nextcloud scroll container), fall back to window
+    var appContent = document.getElementById("app-content");
+    if (appContent && appContent.scrollHeight > appContent.clientHeight) {
+      this._scrollEl = appContent;
+    } else {
+      this._scrollEl = window;
+    }
+    this._scrollEl.addEventListener("scroll", this._onScroll, { passive: true });
   },
   beforeDestroy: function () {
-    if (this._observer) {
-      this._observer.disconnect();
+    if (this._scrollEl && this._onScroll) {
+      this._scrollEl.removeEventListener("scroll", this._onScroll);
     }
   },
   methods: {
@@ -228,7 +241,9 @@ export default {
   border-radius: var(--radius-card, 12px);
   box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
   margin-bottom: var(--spacing-lg, 24px);
-  overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 .proj-filter__header {
   display: flex;
@@ -407,18 +422,8 @@ export default {
   padding: 8px 0;
 }
 
-/* ── Sentinel ── */
-.proj-filter__sentinel {
-  height: 0;
-  margin: 0;
-  padding: 0;
-}
-
 /* ── Sticky state ── */
 .proj-filter--sticky {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   border-radius: 0 0 var(--radius-card, 12px) var(--radius-card, 12px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
