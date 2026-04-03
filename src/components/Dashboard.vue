@@ -21,19 +21,8 @@
       <!-- 1. Welcome Strip -->
       <WelcomeStrip :employee="data.employee" :organization="data.organization" :focus-now="derivedFocusNow" :workload="derivedWorkload" @filter="onFocusFilter" />
 
-      <!-- Active Project Filter Chip -->
-      <div v-if="activeProjectId !== null && activeProjectName" class="emp-dashboard__filter-chip">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-        </svg>
-        Filtering: <strong>{{ activeProjectName }}</strong>
-        <button class="emp-dashboard__filter-chip-clear" title="Clear filter" @click="onProjectFilter(null)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-
-      <!-- 2. My Projects -->
-      <ProjectsWorkspaceWidget :projects="data.projects" :active-project-id="activeProjectId" @filter-project="onProjectFilter" />
+      <!-- 2. My Projects — Filter + Pill Strip -->
+      <ProjectFilterWidget :projects="data.projects" :tasks="data.tasks" :active-project-id="activeProjectId" @filter-project="onProjectFilter" />
 
       <!-- 3. Primary Focus Area -->
       <section class="emp-dashboard__focus-row">
@@ -67,7 +56,7 @@ import ScheduleWidget from "./ScheduleWidget.vue";
 import TasksBoardWidget from "./TasksBoardWidget.vue";
 import MyWeekWidget from "./MyWeekWidget.vue";
 import GanttWidget from "./GanttWidget.vue";
-import ProjectsWorkspaceWidget from "./ProjectsWorkspaceWidget.vue";
+import ProjectFilterWidget from "./ProjectFilterWidget.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
 
 export default {
@@ -80,7 +69,7 @@ export default {
     TasksBoardWidget,
     MyWeekWidget,
     GanttWidget,
-    ProjectsWorkspaceWidget,
+    ProjectFilterWidget,
     ProjectDrawerWidget,
   },
   props: {
@@ -161,12 +150,6 @@ export default {
         .slice(0, 1)
         .forEach(function (i) { nextMilestone = { label: i.label, date: i.endDate }; });
       return { dueToday: dueToday, dueThisWeek: dueThisWeek, noDueDate: noDueDate, nextMilestone: nextMilestone };
-    },
-    activeProjectName: function () {
-      if (this.activeProjectId === null) return null;
-      var pid = this.activeProjectId;
-      var match = this.data.projects.find(function (p) { return p.id === pid; });
-      return match ? match.name : null;
     },
   },
   methods: {
@@ -383,42 +366,6 @@ export default {
   color: var(--color-text-secondary);
   line-height: 1.5;
   margin: 0;
-}
-
-.emp-dashboard__filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  margin-bottom: var(--spacing-md);
-  background: #e8f0fe;
-  color: #1e4a8a;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid #c3d9f4;
-}
-.emp-dashboard__filter-chip svg {
-  color: #4a90d9;
-  flex-shrink: 0;
-}
-.emp-dashboard__filter-chip-clear {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #c3d9f4;
-  color: #1e4a8a;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  margin-left: 4px;
-  transition: background 0.15s;
-}
-.emp-dashboard__filter-chip-clear:hover {
-  background: var(--color-danger);
-  color: #fff;
 }
 
 @media (max-width: 900px) {
