@@ -20,11 +20,11 @@
       <!-- Week navigation -->
       <div class="my-week__nav">
         <button class="my-week__nav-btn" title="Previous week" @click.stop="prevWeek">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <span class="my-week__nav-label">{{ weekLabel }}</span>
         <button class="my-week__nav-btn" title="Next week" @click.stop="nextWeek">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button v-if="!isCurrentWeek" class="my-week__nav-today" @click.stop="goToCurrentWeek">Today</button>
       </div>
@@ -225,6 +225,7 @@ export default {
 .my-week__nav {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 0 0 12px;
   margin-bottom: 4px;
