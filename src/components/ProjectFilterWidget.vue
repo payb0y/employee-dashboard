@@ -1,96 +1,106 @@
 <template>
-  <section class="proj-filter" :class="{ 'proj-filter--sticky': isSticky }">
-    <div class="proj-filter__header" :class="{ 'proj-filter__header--hidden': isSticky }" @click="collapsed = !collapsed">
-      <h3 class="proj-filter__title">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#8b5cf6" stroke="none"/></svg>
-        My Projects
-        <span class="proj-filter__badge">{{ projects.length }}</span>
-      </h3>
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="proj-filter__chevron" :class="{ 'proj-filter__chevron--rotated': collapsed }"><path d="M18 15l-6-6-6 6" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <div v-show="!collapsed || isSticky" class="proj-filter__body" :class="{ 'proj-filter__body--compact': isSticky }">
-      <div class="proj-filter__tabs">
-        <div v-show="!isSticky || toolbarExpanded" class="proj-filter__tabs-toolbar">
-          <input
-            v-model="tabSearch"
-            type="text"
-            class="proj-filter__tabs-search-input"
-            placeholder="Search projects…"
-          />
-          <select
-            v-model="tabStatusFilter"
-            class="proj-filter__tabs-status-select"
-          >
-            <option value="">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Completed">Completed</option>
-            <option value="Archived">Archived</option>
-          </select>
-          <select
-            v-model="tabTaskDueFilter"
-            class="proj-filter__tabs-status-select"
-          >
-            <option value="">All Task Due</option>
-            <option value="overdue">Has Overdue</option>
-            <option value="today">Has Due Today</option>
-            <option value="nextSevenDays">Has Upcoming</option>
-            <option value="nodue">Has No Due Date</option>
-          </select>
-          <select
-            v-model="tabTaskStatusFilter"
-            class="proj-filter__tabs-status-select"
-          >
-            <option value="">All Task Status</option>
-            <option value="open">Has Open Tasks</option>
-            <option value="done">Has Done Tasks</option>
-          </select>
-          <button
-            v-if="tabSearch || tabStatusFilter || tabTaskDueFilter || tabTaskStatusFilter"
-            class="proj-filter__tabs-clear"
-            @click="clearProjectFilters"
-          >
-            ✕ Clear
-          </button>
-        </div>
-        <div class="proj-filter__tabs-strip">
-          <button
-            v-if="isSticky && !toolbarExpanded"
-            class="proj-filter__sticky-toggle"
-            title="Show filters"
-            @click="toolbarExpanded = true"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#6b7280" stroke="none"/></svg>
-            <span v-if="hasActiveFilters" class="proj-filter__filter-dot"></span>
-          </button>
-          <button
-            v-if="isSticky && toolbarExpanded"
-            class="proj-filter__sticky-toggle"
-            title="Hide filters"
-            @click="toolbarExpanded = false"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button
-            v-for="p in visibleProjects"
-            :key="p.id"
-            class="proj-filter__tab"
-            :class="{ 'proj-filter__tab--active': activeProjectId === p.id }"
-            @click="selectProject(p)"
-          >
-            <span
-              class="proj-filter__tab-dot"
-              :class="'proj-filter__tab-dot--' + p.statusLabel.toLowerCase()"
-            ></span>
-            <span class="proj-filter__tab-name">{{ p.name }}</span>
-            <span v-if="p.number" class="proj-filter__tab-num">{{ p.number }}</span>
-          </button>
-          <span v-if="visibleProjects.length === 0" class="proj-filter__tabs-empty">
-            No projects match filters
-          </span>
+  <div class="proj-filter-wrap">
+    <!-- Placeholder: reserves space when the widget goes fixed -->
+    <div v-if="isSticky" class="proj-filter__placeholder" :style="{ height: placeholderH + 'px' }"></div>
+
+    <section
+      ref="card"
+      class="proj-filter"
+      :class="{ 'proj-filter--fixed': isSticky }"
+      :style="isSticky ? fixedStyle : null"
+    >
+      <div v-show="!isSticky" class="proj-filter__header" @click="collapsed = !collapsed">
+        <h3 class="proj-filter__title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#8b5cf6" stroke="none"/></svg>
+          My Projects
+          <span class="proj-filter__badge">{{ projects.length }}</span>
+        </h3>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="proj-filter__chevron" :class="{ 'proj-filter__chevron--rotated': collapsed }"><path d="M18 15l-6-6-6 6" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div v-show="!collapsed || isSticky" class="proj-filter__body" :class="{ 'proj-filter__body--compact': isSticky }">
+        <div class="proj-filter__tabs">
+          <div v-show="!isSticky || toolbarExpanded" class="proj-filter__tabs-toolbar">
+            <input
+              v-model="tabSearch"
+              type="text"
+              class="proj-filter__tabs-search-input"
+              placeholder="Search projects…"
+            />
+            <select
+              v-model="tabStatusFilter"
+              class="proj-filter__tabs-status-select"
+            >
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Completed">Completed</option>
+              <option value="Archived">Archived</option>
+            </select>
+            <select
+              v-model="tabTaskDueFilter"
+              class="proj-filter__tabs-status-select"
+            >
+              <option value="">All Task Due</option>
+              <option value="overdue">Has Overdue</option>
+              <option value="today">Has Due Today</option>
+              <option value="nextSevenDays">Has Upcoming</option>
+              <option value="nodue">Has No Due Date</option>
+            </select>
+            <select
+              v-model="tabTaskStatusFilter"
+              class="proj-filter__tabs-status-select"
+            >
+              <option value="">All Task Status</option>
+              <option value="open">Has Open Tasks</option>
+              <option value="done">Has Done Tasks</option>
+            </select>
+            <button
+              v-if="tabSearch || tabStatusFilter || tabTaskDueFilter || tabTaskStatusFilter"
+              class="proj-filter__tabs-clear"
+              @click="clearProjectFilters"
+            >
+              ✕ Clear
+            </button>
+          </div>
+          <div class="proj-filter__tabs-strip">
+            <button
+              v-if="isSticky && !toolbarExpanded"
+              class="proj-filter__sticky-toggle"
+              title="Show filters"
+              @click="toolbarExpanded = true"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#6b7280" stroke="none"/></svg>
+              <span v-if="hasActiveFilters" class="proj-filter__filter-dot"></span>
+            </button>
+            <button
+              v-if="isSticky && toolbarExpanded"
+              class="proj-filter__sticky-toggle"
+              title="Hide filters"
+              @click="toolbarExpanded = false"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button
+              v-for="p in visibleProjects"
+              :key="p.id"
+              class="proj-filter__tab"
+              :class="{ 'proj-filter__tab--active': activeProjectId === p.id }"
+              @click="selectProject(p)"
+            >
+              <span
+                class="proj-filter__tab-dot"
+                :class="'proj-filter__tab-dot--' + p.statusLabel.toLowerCase()"
+              ></span>
+              <span class="proj-filter__tab-name">{{ p.name }}</span>
+              <span v-if="p.number" class="proj-filter__tab-num">{{ p.number }}</span>
+            </button>
+            <span v-if="visibleProjects.length === 0" class="proj-filter__tabs-empty">
+              No projects match filters
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 </template>
 
 <script>
@@ -110,6 +120,8 @@ export default {
       tabStatusFilter: "",
       tabTaskDueFilter: "",
       tabTaskStatusFilter: "",
+      placeholderH: 0,
+      fixedStyle: null,
     };
   },
   computed: {
@@ -191,39 +203,51 @@ export default {
   },
   mounted: function () {
     var self = this;
-    // Measure the header height for hysteresis threshold
-    var headerEl = this.$el.querySelector(".proj-filter__header");
-    this._headerHeight = headerEl ? headerEl.offsetHeight : 50;
-    this._stickyOffset = this.$el.offsetTop;
+    // Snapshot the widget's position and size before any sticky logic runs.
+    // The wrapper div ($el) is always in normal flow, so its offset is stable.
+    this._measure = function () {
+      var wrap = self.$el;
+      var card = self.$refs.card;
+      if (!wrap || !card) return;
+      var rect = wrap.getBoundingClientRect();
+      self._triggerTop = wrap.offsetTop;  // distance from top of offsetParent
+      self.placeholderH = card.offsetHeight;
+      self._fixedLeft = rect.left;
+      self._fixedWidth = rect.width;
+    };
+    this._measure();
 
     this._onScroll = function () {
-      var scrollY;
-      if (self._scrollEl === window) {
-        scrollY = window.scrollY || window.pageYOffset;
-      } else {
-        scrollY = self._scrollEl.scrollTop;
-      }
-      if (!self.isSticky && scrollY > self._stickyOffset) {
+      var wrap = self.$el;
+      if (!wrap) return;
+      // Use the wrapper's bounding rect — it stays in flow even when card is fixed
+      var rect = wrap.getBoundingClientRect();
+      var shouldStick = rect.top <= 0;
+
+      if (shouldStick && !self.isSticky) {
+        // Snapshot dimensions right before going fixed
+        var card = self.$refs.card;
+        if (card) self.placeholderH = card.offsetHeight;
+        self._fixedLeft = rect.left;
+        self._fixedWidth = rect.width;
+        self.fixedStyle = {
+          left: self._fixedLeft + "px",
+          width: self._fixedWidth + "px",
+        };
         self.isSticky = true;
-      } else if (self.isSticky && scrollY < self._stickyOffset - 5) {
-        // Hysteresis: unstick only when scrolled well above the threshold
+      } else if (!shouldStick && self.isSticky) {
         self.isSticky = false;
         self.toolbarExpanded = false;
+        self.fixedStyle = null;
       }
     };
-    // Try #app-content first (Nextcloud scroll container), fall back to window
-    var appContent = document.getElementById("app-content");
-    if (appContent && appContent.scrollHeight > appContent.clientHeight) {
-      this._scrollEl = appContent;
-    } else {
-      this._scrollEl = window;
-    }
-    this._scrollEl.addEventListener("scroll", this._onScroll, { passive: true });
+
+    window.addEventListener("scroll", this._onScroll, { passive: true });
+    window.addEventListener("resize", this._measure, { passive: true });
   },
   beforeDestroy: function () {
-    if (this._scrollEl && this._onScroll) {
-      this._scrollEl.removeEventListener("scroll", this._onScroll);
-    }
+    window.removeEventListener("scroll", this._onScroll);
+    window.removeEventListener("resize", this._measure);
   },
   methods: {
     selectProject: function (project) {
@@ -241,15 +265,32 @@ export default {
 </script>
 
 <style scoped>
+/* ── Wrapper (always in flow) ── */
+.proj-filter-wrap {
+  margin-bottom: var(--spacing-lg, 24px);
+}
+
+/* ── Placeholder (shown when fixed, keeps content from jumping) ── */
+.proj-filter__placeholder {
+  pointer-events: none;
+}
+
+/* ── Card ── */
 .proj-filter {
   background: var(--bg-card, #fff);
   border-radius: var(--radius-card, 12px);
   box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  margin-bottom: var(--spacing-lg, 24px);
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
+
+/* ── Fixed state ── */
+.proj-filter--fixed {
+  position: fixed;
+  top: 0;
+  z-index: 100;
+  border-radius: 0 0 var(--radius-card, 12px) var(--radius-card, 12px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
 .proj-filter__header {
   display: flex;
   align-items: center;
@@ -260,13 +301,6 @@ export default {
   transition: background 0.15s;
 }
 .proj-filter__header:hover { background: #fafbfd; }
-.proj-filter__header--hidden {
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
 .proj-filter__title {
   font-size: 15px;
   font-weight: 700;
@@ -291,6 +325,9 @@ export default {
 .proj-filter__chevron--rotated { transform: rotate(180deg); }
 .proj-filter__body {
   padding: 0 var(--spacing-lg, 24px) var(--spacing-lg, 24px);
+}
+.proj-filter__body--compact {
+  padding: 8px var(--spacing-lg, 24px) !important;
 }
 
 /* ── Tabs container ── */
@@ -432,15 +469,6 @@ export default {
   font-size: 13px;
   color: var(--color-text-muted, #9ca3af);
   padding: 8px 0;
-}
-
-/* ── Sticky state ── */
-.proj-filter--sticky {
-  border-radius: 0 0 var(--radius-card, 12px) var(--radius-card, 12px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-.proj-filter__body--compact {
-  padding: 8px var(--spacing-lg, 24px) !important;
 }
 
 /* ── Toggle button ── */
