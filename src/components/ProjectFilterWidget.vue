@@ -1,6 +1,8 @@
 <template>
-  <section class="proj-filter">
-    <div class="proj-filter__header" @click="collapsed = !collapsed">
+  <div>
+  <div ref="sentinel" class="proj-filter__sentinel"></div>
+  <section class="proj-filter" :class="{ 'proj-filter--sticky': isSticky }">
+    <div v-show="!isSticky" class="proj-filter__header" @click="collapsed = !collapsed">
       <h3 class="proj-filter__title">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#8b5cf6" stroke="none"/></svg>
         My Projects
@@ -8,9 +10,9 @@
       </h3>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="proj-filter__chevron" :class="{ 'proj-filter__chevron--rotated': collapsed }"><path d="M18 15l-6-6-6 6" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <div v-show="!collapsed" class="proj-filter__body">
+    <div v-show="!collapsed || isSticky" class="proj-filter__body">
       <div class="proj-filter__tabs">
-        <div class="proj-filter__tabs-toolbar">
+        <div v-show="!isSticky || toolbarExpanded" class="proj-filter__tabs-toolbar">
           <input
             v-model="tabSearch"
             type="text"
@@ -54,6 +56,23 @@
         </div>
         <div class="proj-filter__tabs-strip">
           <button
+            v-if="isSticky && !toolbarExpanded"
+            class="proj-filter__sticky-toggle"
+            title="Show filters"
+            @click="toolbarExpanded = true"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#6b7280" stroke="none"/></svg>
+            <span v-if="hasActiveFilters" class="proj-filter__filter-dot"></span>
+          </button>
+          <button
+            v-if="isSticky && toolbarExpanded"
+            class="proj-filter__sticky-toggle"
+            title="Hide filters"
+            @click="toolbarExpanded = false"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button
             v-for="p in visibleProjects"
             :key="p.id"
             class="proj-filter__tab"
@@ -74,6 +93,7 @@
       </div>
     </div>
   </section>
+  </div>
 </template>
 
 <script>
@@ -87,6 +107,8 @@ export default {
   data: function () {
     return {
       collapsed: false,
+      isSticky: false,
+      toolbarExpanded: false,
       tabSearch: "",
       tabStatusFilter: "",
       tabTaskDueFilter: "",
@@ -127,6 +149,9 @@ export default {
         });
       });
     },
+    hasActiveFilters: function () {
+      return !!(this.tabSearch || this.tabStatusFilter || this.tabTaskDueFilter || this.tabTaskStatusFilter);
+    },
     visibleProjects: function () {
       var self = this;
       var list = this.enrichedProjects;
@@ -166,6 +191,21 @@ export default {
       }
       return list;
     },
+  },
+  mounted: function () {
+    var self = this;
+    this._observer = new IntersectionObserver(function (entries) {
+      self.isSticky = !entries[0].isIntersecting;
+      if (!self.isSticky) {
+        self.toolbarExpanded = false;
+      }
+    }, { threshold: 0 });
+    this._observer.observe(this.$refs.sentinel);
+  },
+  beforeDestroy: function () {
+    if (this._observer) {
+      this._observer.disconnect();
+    }
   },
   methods: {
     selectProject: function (project) {
@@ -365,6 +405,56 @@ export default {
   font-size: 13px;
   color: var(--color-text-muted, #9ca3af);
   padding: 8px 0;
+}
+
+/* ── Sentinel ── */
+.proj-filter__sentinel {
+  height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Sticky state ── */
+.proj-filter--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-radius: 0 0 var(--radius-card, 12px) var(--radius-card, 12px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.proj-filter--sticky .proj-filter__body {
+  padding: 8px var(--spacing-lg, 24px);
+}
+
+/* ── Toggle button ── */
+.proj-filter__sticky-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: none;
+  border: 1px solid var(--color-border, #e5e7eb);
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s;
+}
+.proj-filter__sticky-toggle:hover {
+  background: #f3f4f6;
+}
+
+/* ── Active filter dot ── */
+.proj-filter__filter-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c878c8;
 }
 
 @media (max-width: 700px) {
