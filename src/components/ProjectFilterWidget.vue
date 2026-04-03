@@ -1,13 +1,10 @@
 <template>
   <div class="proj-filter-wrap">
-    <!-- Placeholder: reserves space when the widget goes fixed -->
-    <div v-if="isSticky" class="proj-filter__placeholder" :style="{ height: placeholderH + 'px' }"></div>
+    <div ref="sentinel" class="proj-filter__sentinel" aria-hidden="true"></div>
 
     <section
-      ref="card"
       class="proj-filter"
       :class="{ 'proj-filter--fixed': isSticky }"
-      :style="isSticky ? fixedStyle : null"
     >
       <div v-show="!isSticky" class="proj-filter__header" @click="collapsed = !collapsed">
         <h3 class="proj-filter__title">
@@ -120,8 +117,6 @@ export default {
       tabStatusFilter: "",
       tabTaskDueFilter: "",
       tabTaskStatusFilter: "",
-      placeholderH: 0,
-      fixedStyle: null,
     };
   },
   computed: {
@@ -203,51 +198,25 @@ export default {
   },
   mounted: function () {
     var self = this;
-    // Snapshot the widget's position and size before any sticky logic runs.
-    // The wrapper div ($el) is always in normal flow, so its offset is stable.
-    this._measure = function () {
-      var wrap = self.$el;
-      var card = self.$refs.card;
-      if (!wrap || !card) return;
-      var rect = wrap.getBoundingClientRect();
-      self._triggerTop = wrap.offsetTop;  // distance from top of offsetParent
-      self.placeholderH = card.offsetHeight;
-      self._fixedLeft = rect.left;
-      self._fixedWidth = rect.width;
-    };
-    this._measure();
+    var sentinel = this.$refs.sentinel;
+    var scrollRoot = document.getElementById("app-content");
+    if (!sentinel || !scrollRoot || typeof IntersectionObserver === "undefined") return;
 
-    this._onScroll = function () {
-      var wrap = self.$el;
-      if (!wrap) return;
-      // Use the wrapper's bounding rect — it stays in flow even when card is fixed
-      var rect = wrap.getBoundingClientRect();
-      var shouldStick = rect.top <= 0;
+    this._stickyObserver = new IntersectionObserver(function (entries) {
+      var entry = entries[0];
+      if (!entry) return;
+      var shouldStick = !entry.isIntersecting && entry.boundingClientRect.top <= entry.rootBounds.top;
+      self.isSticky = shouldStick;
+      if (!shouldStick) self.toolbarExpanded = false;
+    }, {
+      root: scrollRoot,
+      threshold: [0, 1],
+    });
 
-      if (shouldStick && !self.isSticky) {
-        // Snapshot dimensions right before going fixed
-        var card = self.$refs.card;
-        if (card) self.placeholderH = card.offsetHeight;
-        self._fixedLeft = rect.left;
-        self._fixedWidth = rect.width;
-        self.fixedStyle = {
-          left: self._fixedLeft + "px",
-          width: self._fixedWidth + "px",
-        };
-        self.isSticky = true;
-      } else if (!shouldStick && self.isSticky) {
-        self.isSticky = false;
-        self.toolbarExpanded = false;
-        self.fixedStyle = null;
-      }
-    };
-
-    window.addEventListener("scroll", this._onScroll, { passive: true });
-    window.addEventListener("resize", this._measure, { passive: true });
+    this._stickyObserver.observe(sentinel);
   },
   beforeDestroy: function () {
-    window.removeEventListener("scroll", this._onScroll);
-    window.removeEventListener("resize", this._measure);
+    if (this._stickyObserver) this._stickyObserver.disconnect();
   },
   methods: {
     selectProject: function (project) {
@@ -270,8 +239,11 @@ export default {
   margin-bottom: var(--spacing-lg, 24px);
 }
 
-/* ── Placeholder (shown when fixed, keeps content from jumping) ── */
-.proj-filter__placeholder {
+/* ── Sticky sentinel ── */
+.proj-filter__sentinel {
+  width: 100%;
+  height: 1px;
+  margin-top: -1px;
   pointer-events: none;
 }
 
@@ -280,13 +252,13 @@ export default {
   background: var(--bg-card, #fff);
   border-radius: var(--radius-card, 12px);
   box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 /* ── Fixed state ── */
 .proj-filter--fixed {
-  position: fixed;
-  top: 0;
-  z-index: 100;
   border-radius: 0 0 var(--radius-card, 12px) var(--radius-card, 12px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
