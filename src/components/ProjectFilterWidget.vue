@@ -1,6 +1,6 @@
 <template>
   <section class="proj-filter" :class="{ 'proj-filter--sticky': isSticky }">
-    <div v-show="!isSticky" class="proj-filter__header" @click="collapsed = !collapsed">
+    <div class="proj-filter__header" :class="{ 'proj-filter__header--hidden': isSticky }" @click="collapsed = !collapsed">
       <h3 class="proj-filter__title">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#8b5cf6" stroke="none"/></svg>
         My Projects
@@ -8,7 +8,7 @@
       </h3>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="proj-filter__chevron" :class="{ 'proj-filter__chevron--rotated': collapsed }"><path d="M18 15l-6-6-6 6" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <div v-show="!collapsed || isSticky" class="proj-filter__body">
+    <div v-show="!collapsed || isSticky" class="proj-filter__body" :class="{ 'proj-filter__body--compact': isSticky }">
       <div class="proj-filter__tabs">
         <div v-show="!isSticky || toolbarExpanded" class="proj-filter__tabs-toolbar">
           <input
@@ -191,19 +191,24 @@ export default {
   },
   mounted: function () {
     var self = this;
+    // Measure the header height for hysteresis threshold
+    var headerEl = this.$el.querySelector(".proj-filter__header");
+    this._headerHeight = headerEl ? headerEl.offsetHeight : 50;
+    this._stickyOffset = this.$el.offsetTop;
+
     this._onScroll = function () {
-      // When sticky kicks in, the element's top will be 0 (or the sticky top value)
-      // Compare with the sentinel-like approach: check if element rect.top <= container top
-      var rect = self.$el.getBoundingClientRect();
-      var containerTop = 0;
-      if (self._scrollEl && self._scrollEl !== window) {
-        containerTop = self._scrollEl.getBoundingClientRect().top;
+      var scrollY;
+      if (self._scrollEl === window) {
+        scrollY = window.scrollY || window.pageYOffset;
+      } else {
+        scrollY = self._scrollEl.scrollTop;
       }
-      // Stuck when the element is at the top edge (within 1px tolerance)
-      var stuck = rect.top <= containerTop + 1 && rect.bottom > containerTop;
-      if (stuck !== self.isSticky) {
-        self.isSticky = stuck;
-        if (!stuck) self.toolbarExpanded = false;
+      if (!self.isSticky && scrollY > self._stickyOffset) {
+        self.isSticky = true;
+      } else if (self.isSticky && scrollY < self._stickyOffset - 5) {
+        // Hysteresis: unstick only when scrolled well above the threshold
+        self.isSticky = false;
+        self.toolbarExpanded = false;
       }
     };
     // Try #app-content first (Nextcloud scroll container), fall back to window
@@ -255,6 +260,13 @@ export default {
   transition: background 0.15s;
 }
 .proj-filter__header:hover { background: #fafbfd; }
+.proj-filter__header--hidden {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 .proj-filter__title {
   font-size: 15px;
   font-weight: 700;
@@ -427,8 +439,8 @@ export default {
   border-radius: 0 0 var(--radius-card, 12px) var(--radius-card, 12px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-.proj-filter--sticky .proj-filter__body {
-  padding: 8px var(--spacing-lg, 24px);
+.proj-filter__body--compact {
+  padding: 8px var(--spacing-lg, 24px) !important;
 }
 
 /* ── Toggle button ── */
