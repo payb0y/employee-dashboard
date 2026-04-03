@@ -1,7 +1,5 @@
 <template>
   <div class="proj-filter-wrap">
-    <div ref="sentinel" class="proj-filter__sentinel" aria-hidden="true"></div>
-
     <section
       class="proj-filter"
       :class="{ 'proj-filter--fixed': isSticky }"
@@ -198,25 +196,25 @@ export default {
   },
   mounted: function () {
     var self = this;
-    var sentinel = this.$refs.sentinel;
     var scrollRoot = document.getElementById("app-content");
-    if (!sentinel || !scrollRoot || typeof IntersectionObserver === "undefined") return;
+    if (!scrollRoot) return;
 
-    this._stickyObserver = new IntersectionObserver(function (entries) {
-      var entry = entries[0];
-      if (!entry) return;
-      var shouldStick = !entry.isIntersecting && entry.boundingClientRect.top <= entry.rootBounds.top;
+    this._onScroll = function () {
+      var wrap = self.$el;
+      if (!wrap) return;
+      var rootRect = scrollRoot.getBoundingClientRect();
+      var wrapRect = wrap.getBoundingClientRect();
+      var shouldStick = wrapRect.top <= rootRect.top;
       self.isSticky = shouldStick;
       if (!shouldStick) self.toolbarExpanded = false;
-    }, {
-      root: scrollRoot,
-      threshold: [0, 1],
-    });
+    };
 
-    this._stickyObserver.observe(sentinel);
+    this._onScroll();
+    scrollRoot.addEventListener("scroll", this._onScroll, { passive: true });
   },
   beforeDestroy: function () {
-    if (this._stickyObserver) this._stickyObserver.disconnect();
+    var scrollRoot = document.getElementById("app-content");
+    if (scrollRoot && this._onScroll) scrollRoot.removeEventListener("scroll", this._onScroll);
   },
   methods: {
     selectProject: function (project) {
@@ -237,14 +235,9 @@ export default {
 /* ── Wrapper (always in flow) ── */
 .proj-filter-wrap {
   margin-bottom: var(--spacing-lg, 24px);
-}
-
-/* ── Sticky sentinel ── */
-.proj-filter__sentinel {
-  width: 100%;
-  height: 1px;
-  margin-top: -1px;
-  pointer-events: none;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 /* ── Card ── */
@@ -252,9 +245,6 @@ export default {
   background: var(--bg-card, #fff);
   border-radius: var(--radius-card, 12px);
   box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  position: sticky;
-  top: 0;
-  z-index: 100;
 }
 
 /* ── Fixed state ── */
