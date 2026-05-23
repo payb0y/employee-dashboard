@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace OCA\EmployeeDashboard\Service;
 
+use OCP\IConfig;
 use OCP\IDBConnection;
 
 class EmployeeService {
 
     private IDBConnection $db;
+    private IConfig $config;
 
-    public function __construct(IDBConnection $db) {
-        $this->db = $db;
+    public function __construct(IDBConnection $db, IConfig $config) {
+        $this->db     = $db;
+        $this->config = $config;
     }
 
     public function getDashboardData(string $uid): array {
@@ -23,10 +26,15 @@ class EmployeeService {
             return (int)$p['id'];
         }, $projects);
 
+        $upcoming = $this->fetchUpcomingEvents($uid);
+
+        $focusNow = $this->computeFocusNow($cards);
+        $focusNow['remainingToday'] = $upcoming['remainingToday'];
+
         return [
             'employee'     => $this->getEmployeeProfile($uid, $orgId),
             'organization' => $this->getOrganization($orgId),
-            'focusNow'     => $this->computeFocusNow($cards),
+            'focusNow'     => $focusNow,
             'workload'     => $this->computeWorkload($cards, $projects),
             'schedule'     => $this->computeSchedule($cards, $projectIds),
             'tasks'        => $this->buildTaskList($cards, $projects),
@@ -35,6 +43,7 @@ class EmployeeService {
             'resources'       => $this->computeResources($projects, $projectIds),
             'activityEvents'  => $this->fetchActivityEvents($projectIds),
             'notes'           => $this->fetchNotes($projectIds),
+            'upcomingEvents'  => $upcoming['events'],
         ];
     }
 
@@ -561,5 +570,141 @@ class EmployeeService {
             ];
         }
         return $items;
+    }
+
+    // ── Upcoming calendar events ─────────────────────────────────────
+
+    private function fetchUpcomingEvents(string $uid): array {
+        $tzName = $this->config->getUserValue($uid, 'core', 'timezone', '') ?: 'UTC';
+        try {
+            $tz = new \DateTimeZone($tzName);
+        } catch (\Exception $e) {
+            $tz = new \DateTimeZone('UTC');
+        }
+
+        $now       = new \DateTime('now', $tz);
+        $windowEnd = (clone $now)->modify('+7 days');
+        $todayEnd  = (clone $now)->setTime(23, 59, 59);
+
+        $sql = "SELECT co.id, co.uid AS event_uid, co.calendardata,
+                       co.firstoccurence, co.lastoccurence,
+                       cal.id AS calendar_id, cal.calendarcolor
+                FROM *PREFIX*calendars cal
+                JOIN *PREFIX*calendarobjects co ON co.calendarid = cal.id
+                WHERE cal.principaluri = ?
+                  AND cal.deleted_at IS NULL
+                  AND co.componenttype = 'VEVENT'
+                  AND co.deleted_at IS NULL
+                  AND co.lastoccurence >= ?
+                  AND co.firstoccurence <= ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'principals/users/' . $uid,
+            $now->getTimestamp(),
+            $windowEnd->getTimestamp(),
+        ]);
+
+        $events         = [];
+        $remainingToday = 0;
+
+        while ($row = $stmt->fetch()) {
+            $occurrence = $this->extractNextOccurrence(
+                $row['calendardata'],
+                $now,
+                $windowEnd,
+                $tz
+            );
+            if ($occurrence === null) {
+                continue;
+            }
+
+            $startsAt = $occurrence['start'];
+
+            if ($startsAt <= $todayEnd) {
+                $remainingToday++;
+            }
+
+            $events[] = [
+                'uid'        => (string)$row['event_uid'],
+                'title'      => $occurrence['title'],
+                'startsAt'   => $startsAt->format(\DateTime::ATOM),
+                'allDay'     => $occurrence['allDay'],
+                'color'      => $row['calendarcolor'] ?: null,
+                'calendarId' => (int)$row['calendar_id'],
+            ];
+        }
+
+        usort($events, function ($a, $b) {
+            return strcmp($a['startsAt'], $b['startsAt']);
+        });
+
+        return [
+            'events'         => array_slice($events, 0, 5),
+            'remainingToday' => $remainingToday,
+        ];
+    }
+
+    private function extractNextOccurrence(
+        $calendarData,
+        \DateTime $now,
+        \DateTime $windowEnd,
+        \DateTimeZone $tz
+    ): ?array {
+        if (!is_string($calendarData) && is_resource($calendarData)) {
+            $calendarData = stream_get_contents($calendarData);
+        }
+        if (!is_string($calendarData) || $calendarData === '') {
+            return null;
+        }
+
+        try {
+            $vCalendar = \Sabre\VObject\Reader::read($calendarData);
+            $expanded  = $vCalendar->expand($now, $windowEnd);
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        $bestStart = null;
+        $bestEvent = null;
+
+        foreach ($expanded->VEVENT ?? [] as $vEvent) {
+            $dtStart = $vEvent->DTSTART;
+            if ($dtStart === null) {
+                continue;
+            }
+            $start = $dtStart->getDateTime($tz);
+            if ($start <= $now || $start > $windowEnd) {
+                continue;
+            }
+            if ($bestStart === null || $start < $bestStart) {
+                $bestStart = $start;
+                $bestEvent = $vEvent;
+            }
+        }
+
+        if ($bestEvent === null) {
+            return null;
+        }
+
+        $summary = isset($bestEvent->SUMMARY) ? trim((string)$bestEvent->SUMMARY) : '';
+        if ($summary === '') {
+            $summary = '(untitled event)';
+        }
+
+        $allDay  = false;
+        $dtStart = $bestEvent->DTSTART;
+        if ($dtStart !== null) {
+            $valueParam = $dtStart['VALUE'];
+            if ($valueParam !== null && strtoupper((string)$valueParam) === 'DATE') {
+                $allDay = true;
+            }
+        }
+
+        return [
+            'start'  => $bestStart,
+            'title'  => $summary,
+            'allDay' => $allDay,
+        ];
     }
 }
