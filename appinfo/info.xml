@@ -5,7 +5,7 @@
     <name>Employee Dashboard</name>
     <summary>Personal task and project workspace for employees</summary>
     <description><![CDATA[An employee-facing dashboard showing assigned tasks, projects, milestones, and resources scoped to the logged-in user.]]></description>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <licence>agpl</licence>
     <author mail="admin@example.com">Employee Dashboard Developer</author>
     <namespace>EmployeeDashboard</namespace>
