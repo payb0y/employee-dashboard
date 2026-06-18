@@ -134,6 +134,7 @@ export default {
   box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
   padding: var(--spacing-lg, 24px);
   margin-bottom: var(--spacing-lg, 24px);
+  isolation: isolate;
 }
 .proj-map__header {
   display: flex;
