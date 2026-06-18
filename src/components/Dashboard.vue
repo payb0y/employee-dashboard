@@ -24,6 +24,13 @@
       <!-- 2. My Projects — Filter + Pill Strip -->
       <ProjectFilterWidget :projects="data.projects" :tasks="data.tasks" :active-project-id="activeProjectId" @filter-project="onProjectFilter" />
 
+      <!-- 2.5 Map of all (or filtered) project locations -->
+      <ProjectsMapWidget
+        :projects="mapProjects"
+        :active-project-id="activeProjectId"
+        @filter-project="onProjectFilter"
+      />
+
       <!-- 3. Primary Focus Area -->
       <section class="emp-dashboard__focus-row">
         <FocusNowWidget :focus="derivedFocusNow" :events="data.upcomingEvents || []" @filter="onFocusFilter" @select-task="onSelectTask" />
@@ -58,6 +65,7 @@ import MyWeekWidget from "./MyWeekWidget.vue";
 import GanttWidget from "./GanttWidget.vue";
 import ProjectFilterWidget from "./ProjectFilterWidget.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
+import ProjectsMapWidget from "./ProjectsMapWidget.vue";
 
 export default {
   name: "Dashboard",
@@ -71,6 +79,7 @@ export default {
     GanttWidget,
     ProjectFilterWidget,
     ProjectDrawerWidget,
+    ProjectsMapWidget,
   },
   props: {
     data: { type: Object, required: true },
@@ -92,6 +101,25 @@ export default {
       var pid = this.activeProjectId;
       if (pid === null) return this.data.projects;
       return this.data.projects.filter(function (p) { return p.id === pid; });
+    },
+    mapProjects: function () {
+      var locs = (this.data && this.data.projectLocations) || {};
+      var out = [];
+      this.filteredProjects.forEach(function (p) {
+        var loc = locs[p.id];
+        if (!loc || loc.lat == null || loc.lng == null) {
+          return;
+        }
+        out.push({
+          id: p.id,
+          name: p.name,
+          number: p.number,
+          lat: loc.lat,
+          lng: loc.lng,
+          displayName: loc.displayName,
+        });
+      });
+      return out;
     },
     filteredTimeline: function () {
       var pid = this.activeProjectId;
