@@ -4,17 +4,35 @@ declare(strict_types=1);
 
 namespace OCA\EmployeeDashboard\Service;
 
+use OCP\App\IAppManager;
+use OCP\Http\Client\IClientService;
 use OCP\IConfig;
 use OCP\IDBConnection;
+use Psr\Log\LoggerInterface;
 
 class EmployeeService {
 
+    private const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+    private const NOMINATIM_TIMEOUT_SECONDS = 10;
+
     private IDBConnection $db;
     private IConfig $config;
+    private IClientService $clientService;
+    private IAppManager $appManager;
+    private LoggerInterface $logger;
 
-    public function __construct(IDBConnection $db, IConfig $config) {
-        $this->db     = $db;
-        $this->config = $config;
+    public function __construct(
+        IDBConnection $db,
+        IConfig $config,
+        IClientService $clientService,
+        IAppManager $appManager,
+        LoggerInterface $logger
+    ) {
+        $this->db            = $db;
+        $this->config        = $config;
+        $this->clientService = $clientService;
+        $this->appManager    = $appManager;
+        $this->logger        = $logger;
     }
 
     public function getDashboardData(string $uid): array {
@@ -31,6 +49,8 @@ class EmployeeService {
         $focusNow = $this->computeFocusNow($cards);
         $focusNow['remainingToday'] = $upcoming['remainingToday'];
 
+        $projectLocations = $this->fetchProjectLocations($projects);
+
         return [
             'employee'     => $this->getEmployeeProfile($uid, $orgId),
             'organization' => $this->getOrganization($orgId),
@@ -44,6 +64,7 @@ class EmployeeService {
             'activityEvents'  => $this->fetchActivityEvents($projectIds),
             'notes'           => $this->fetchNotes($projectIds),
             'upcomingEvents'  => $upcoming['events'],
+            'projectLocations' => $projectLocations,
         ];
     }
 
@@ -94,7 +115,8 @@ class EmployeeService {
         $sql = "SELECT DISTINCT p.id, p.name, p.number, p.description,
                        p.board_id, p.status, p.organization_id,
                        p.folder_id, p.folder_path, p.white_board_id,
-                       p.client_name, p.created_at
+                       p.client_name, p.created_at,
+                       p.loc_street, p.loc_city, p.loc_zip
                 FROM *PREFIX*deck_assigned_users au
                 JOIN *PREFIX*deck_cards c ON c.id = au.card_id
                 JOIN *PREFIX*deck_stacks s ON s.id = c.stack_id
@@ -706,5 +728,183 @@ class EmployeeService {
             'title'  => $summary,
             'allDay' => $allDay,
         ];
+    }
+
+    // ── Project geocoding ────────────────────────────────────────────
+
+    private function fetchProjectLocations(array $projects): array {
+        $out = [];
+        foreach ($projects as $project) {
+            $projectId = (int)$project['id'];
+            $street = trim((string)($project['loc_street'] ?? ''));
+            $city   = trim((string)($project['loc_city']   ?? ''));
+            $zip    = trim((string)($project['loc_zip']    ?? ''));
+
+            if ($street === '' && $city === '' && $zip === '') {
+                continue;
+            }
+
+            $hit = $this->geocodeAddress($street, $city, $zip);
+            if ($hit === null) {
+                continue;
+            }
+
+            $out[$projectId] = [
+                'lat'         => $hit['lat'],
+                'lng'         => $hit['lng'],
+                'displayName' => $hit['displayName'],
+            ];
+        }
+        return $out;
+    }
+
+    private function geocodeAddress(string $street, string $city, string $zip): ?array {
+        $normalized = strtolower($street) . '|' . strtolower($city) . '|' . strtolower($zip);
+        $addrHash   = hash('sha256', $normalized);
+
+        $cached = $this->lookupGeocodeCache($addrHash);
+        if ($cached !== null) {
+            if ($cached['lat'] === null || $cached['lng'] === null) {
+                return null;
+            }
+            return [
+                'lat'         => (float)$cached['lat'],
+                'lng'         => (float)$cached['lng'],
+                'displayName' => $cached['display_name'],
+            ];
+        }
+
+        $parts = array_filter([$street, $zip, $city], static function ($p) { return $p !== ''; });
+        $query = implode(', ', $parts);
+
+        $userAgent = sprintf(
+            'Nextcloud-EmployeeDashboard/%s (%s)',
+            $this->appManager->getAppVersion('employee_dashboard'),
+            $this->resolveInstanceHost()
+        );
+
+        try {
+            $client = $this->clientService->newClient();
+            $response = $client->get(self::NOMINATIM_URL, [
+                'query'   => [
+                    'format' => 'jsonv2',
+                    'limit'  => 1,
+                    'q'      => $query,
+                ],
+                'headers' => [
+                    'User-Agent' => $userAgent,
+                    'Accept'     => 'application/json',
+                ],
+                'timeout' => self::NOMINATIM_TIMEOUT_SECONDS,
+            ]);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Nominatim request failed', [
+                'app'       => 'employee_dashboard',
+                'exception' => $e,
+            ]);
+            usleep(1_000_000);
+            return null;
+        }
+
+        if ($response->getStatusCode() !== 200) {
+            $this->logger->warning('Nominatim non-200', [
+                'app'    => 'employee_dashboard',
+                'status' => $response->getStatusCode(),
+            ]);
+            usleep(1_000_000);
+            return null;
+        }
+
+        $body    = (string)$response->getBody();
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded)) {
+            usleep(1_000_000);
+            return null;
+        }
+        if (empty($decoded)) {
+            $this->insertGeocodeCache($addrHash, null, null, null, 'nominatim');
+            usleep(1_000_000);
+            return null;
+        }
+
+        $first = $decoded[0];
+        if (!isset($first['lat'], $first['lon'])) {
+            $this->insertGeocodeCache($addrHash, null, null, null, 'nominatim');
+            usleep(1_000_000);
+            return null;
+        }
+
+        $lat         = (float)$first['lat'];
+        $lng         = (float)$first['lon'];
+        $displayName = isset($first['display_name']) ? (string)$first['display_name'] : null;
+
+        $this->insertGeocodeCache($addrHash, $lat, $lng, $displayName, 'nominatim');
+        usleep(1_000_000);
+
+        return [
+            'lat'         => $lat,
+            'lng'         => $lng,
+            'displayName' => $displayName,
+        ];
+    }
+
+    private function lookupGeocodeCache(string $addrHash): ?array {
+        $stmt = $this->db->prepare(
+            "SELECT lat, lng, display_name, source
+             FROM *PREFIX*adminpage_geocode_cache
+             WHERE addr_hash = ? LIMIT 1"
+        );
+        $stmt->bindValue(1, $addrHash, \PDO::PARAM_STR);
+        $stmt->execute();
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    private function insertGeocodeCache(
+        string $addrHash,
+        ?float $lat,
+        ?float $lng,
+        ?string $displayName,
+        string $source
+    ): void {
+        $stmt = $this->db->prepare(
+            "INSERT INTO *PREFIX*adminpage_geocode_cache
+             (addr_hash, lat, lng, display_name, source, created_at)
+             VALUES (?, ?, ?, ?, ?, ?)"
+        );
+        $stmt->bindValue(1, $addrHash, \PDO::PARAM_STR);
+        if ($lat === null) {
+            $stmt->bindValue(2, null, \PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(2, number_format($lat, 7, '.', ''), \PDO::PARAM_STR);
+        }
+        if ($lng === null) {
+            $stmt->bindValue(3, null, \PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(3, number_format($lng, 7, '.', ''), \PDO::PARAM_STR);
+        }
+        if ($displayName === null) {
+            $stmt->bindValue(4, null, \PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(4, mb_substr($displayName, 0, 255), \PDO::PARAM_STR);
+        }
+        $stmt->bindValue(5, $source, \PDO::PARAM_STR);
+        $stmt->bindValue(6, time(), \PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    private function resolveInstanceHost(): string {
+        $cli = (string)$this->config->getSystemValue('overwrite.cli.url', '');
+        if ($cli !== '') {
+            $host = parse_url($cli, PHP_URL_HOST);
+            if (is_string($host) && $host !== '') {
+                return $host;
+            }
+        }
+        $trusted = $this->config->getSystemValue('trusted_domains', []);
+        if (is_array($trusted) && isset($trusted[0]) && is_string($trusted[0]) && $trusted[0] !== '') {
+            return $trusted[0];
+        }
+        return 'unknown-host';
     }
 }
