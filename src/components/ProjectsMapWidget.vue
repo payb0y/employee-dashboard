@@ -99,7 +99,9 @@ export default {
         if (p.number) {
           label += " (" + p.number + ")";
         }
-        marker.bindTooltip(label, { direction: "top", offset: [0, -24] });
+        var tooltipNode = document.createElement("span");
+        tooltipNode.textContent = label;
+        marker.bindTooltip(tooltipNode, { direction: "top", offset: [0, -24] });
         marker.on("click", function () {
           self.$emit("filter-project", p.id);
         });
