@@ -4,7 +4,7 @@
       class="proj-filter"
       :class="{ 'proj-filter--fixed': isSticky }"
     >
-      <div v-show="!isSticky" class="proj-filter__header" @click="collapsed = !collapsed">
+      <div class="proj-filter__header" @click="collapsed = !collapsed">
         <h3 class="proj-filter__title">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#8b5cf6" stroke="none"/></svg>
           My Projects
@@ -12,9 +12,9 @@
         </h3>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="proj-filter__chevron" :class="{ 'proj-filter__chevron--rotated': collapsed }"><path d="M18 15l-6-6-6 6" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
-      <div v-show="!collapsed || isSticky" class="proj-filter__body" :class="{ 'proj-filter__body--compact': isSticky }">
+      <div v-show="!collapsed" class="proj-filter__body">
         <div class="proj-filter__tabs">
-          <div v-show="!isSticky || toolbarExpanded" class="proj-filter__tabs-toolbar">
+          <div class="proj-filter__tabs-toolbar">
             <input
               v-model="tabSearch"
               type="text"
@@ -57,23 +57,6 @@
             </button>
           </div>
           <div class="proj-filter__tabs-strip">
-            <button
-              v-if="isSticky && !toolbarExpanded"
-              class="proj-filter__sticky-toggle"
-              title="Show filters"
-              @click="toolbarExpanded = true"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#6b7280" stroke="none"/></svg>
-              <span v-if="hasActiveFilters" class="proj-filter__filter-dot"></span>
-            </button>
-            <button
-              v-if="isSticky && toolbarExpanded"
-              class="proj-filter__sticky-toggle"
-              title="Hide filters"
-              @click="toolbarExpanded = false"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
             <button
               v-for="p in visibleProjects"
               :key="p.id"
