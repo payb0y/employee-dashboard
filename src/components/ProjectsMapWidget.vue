@@ -95,11 +95,11 @@ export default {
           return;
         }
         var marker = L.marker([p.lat, p.lng], { icon: icon });
-        var popupHtml = '<strong>' + self.escapeHtml(p.name) + '</strong>';
+        var label = p.name;
         if (p.number) {
-          popupHtml += '<br><span style="color:#6b7280;font-size:12px;">' + self.escapeHtml(p.number) + '</span>';
+          label += " (" + p.number + ")";
         }
-        marker.bindPopup(popupHtml);
+        marker.bindTooltip(label, { direction: "top", offset: [0, -24] });
         marker.on("click", function () {
           self.$emit("filter-project", p.id);
         });
@@ -120,15 +120,6 @@ export default {
           maxZoom: 14,
         });
       }
-    },
-    escapeHtml: function (s) {
-      if (s == null) { return ""; }
-      return String(s)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
     },
   },
 };
