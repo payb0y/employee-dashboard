@@ -12,6 +12,8 @@ use Psr\Log\LoggerInterface;
 
 class EmployeeService {
 
+    use SqlDialectTrait;
+
     private const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
     private const NOMINATIM_TIMEOUT_SECONDS = 10;
 
@@ -105,7 +107,7 @@ class EmployeeService {
                   AND c.deleted_at = 0
                   AND s.deleted_at = 0
                   AND b.deleted_at = 0
-                  AND c.archived = 0";
+                  AND c.archived = false";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$uid]);
         return $stmt->fetchAll();
@@ -120,7 +122,7 @@ class EmployeeService {
                 FROM *PREFIX*deck_assigned_users au
                 JOIN *PREFIX*deck_cards c ON c.id = au.card_id
                 JOIN *PREFIX*deck_stacks s ON s.id = c.stack_id
-                JOIN *PREFIX*custom_projects p ON p.board_id = s.board_id
+                JOIN *PREFIX*custom_projects p ON {$this->castInt('p.board_id')} = s.board_id
                 WHERE au.participant = ?
                   AND c.deleted_at = 0
                   AND s.deleted_at = 0";
