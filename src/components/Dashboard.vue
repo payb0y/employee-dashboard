@@ -234,6 +234,14 @@ export default {
 #app-content:has(.emp-dashboard) {
   background: var(--image-background);
   padding: 0 !important;
+  /* The sticky header folds its filter row, which changes the document height
+     by ~48px. Scroll anchoring reacts to that by moving scrollTop to keep
+     content still — but the header's stuck state is decided from scroll
+     position, so the correction pushes it back across the threshold and it
+     oscillates. Measured: scrollHeight climbing 2344 -> 2392 through the fold
+     with scrollTop jumping to 38 when 20 was requested. Anchoring is the wrong
+     help here; the header is meant to change height. */
+  overflow-anchor: none;
 }
 #employee-dashboard-root {
   background: var(--image-background);

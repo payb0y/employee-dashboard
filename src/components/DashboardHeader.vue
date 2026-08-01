@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="dash-header-root">
     <!-- Sticky trigger. See the comment on the observer in mounted(): this has
          to sit ABOVE the sticky wrapper, because anything inside it moves when
          the header folds. -->
@@ -294,6 +294,17 @@ export default {
 </script>
 
 <style scoped>
+/* Vue 2 needs a single root, but a real box here would break the sticky child:
+   an element can only travel within its containing block, and a plain wrapper
+   is exactly as tall as its only visible child — zero room to move, so the
+   header scrolled away instead of pinning. display:contents makes this element
+   generate no box at all, so the sentinel and the sticky wrapper below are laid
+   out as children of the dashboard, which is what they were before the sentinel
+   was introduced. */
+.dash-header-root {
+  display: contents;
+}
+
 /* Zero-height trigger. Not display:none — an unrendered element never
    intersects, so the observer would report "stuck" from the start. */
 .dash-header__sentinel {
