@@ -140,8 +140,8 @@ export default {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: color-mix(in oklab, var(--color-danger) 10%, transparent);
+  color: var(--color-danger);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -167,10 +167,10 @@ export default {
   text-align: center;
 }
 .focus-widget__stat--danger {
-  background: #fef3f2;
+  background: var(--color-badge-danger-bg);
 }
 .focus-widget__stat--warning {
-  background: #fffbeb;
+  background: var(--color-badge-warning-bg);
 }
 .focus-widget__stat--clickable {
   cursor: pointer;
@@ -185,7 +185,7 @@ export default {
   transition: background 0.15s;
 }
 .focus-widget__row--clickable:hover {
-  background: #eef2ff;
+  background: var(--accent-bg);
 }
 .focus-widget__stat-value {
   display: block;
@@ -206,7 +206,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #f9fafb;
+  background: var(--bg-subtle);
   border-radius: 8px;
 }
 .focus-widget__next-label,
@@ -228,17 +228,17 @@ export default {
 .focus-widget__btn {
   flex: 1;
   padding: 6px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   font-size: 11px;
   font-weight: 600;
-  color: #4a90d9;
+  color: var(--accent);
   cursor: pointer;
   transition: background 0.15s;
 }
 .focus-widget__btn:hover:not(:disabled) {
-  background: #e8f0fe;
+  background: var(--accent-bg);
 }
 .focus-widget__btn:disabled {
   opacity: 0.5;
@@ -286,7 +286,7 @@ export default {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--color-blue, #4a90d9);
+  background: var(--accent);
 }
 .focus-widget__event-title {
   flex: 1;

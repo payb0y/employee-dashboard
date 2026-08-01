@@ -193,7 +193,7 @@ export default {
   user-select: none;
   transition: background 0.15s;
 }
-.my-week__header:hover { background: #fafbfd; }
+.my-week__header:hover { background: var(--bg-subtle); }
 .my-week__title {
   font-size: 15px;
   font-weight: 700;
@@ -203,12 +203,12 @@ export default {
   align-items: center;
   gap: 8px;
 }
-.my-week__title svg { color: #0ea5e9; }
+.my-week__title svg { color: var(--chart-3); }
 .my-week__badge {
   font-size: 11px;
   font-weight: 600;
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--accent-bg);
+  color: var(--accent-on-bg);
   padding: 2px 8px;
   border-radius: 8px;
 }
@@ -245,7 +245,7 @@ export default {
   transition: background 0.15s, color 0.15s;
 }
 .my-week__nav-btn:hover {
-  background: #f3f4f6;
+  background: var(--bg-subtle);
   color: var(--color-text-primary, #1a1a2e);
 }
 .my-week__nav-label {
@@ -259,8 +259,8 @@ export default {
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 6px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: var(--accent-bg);
+  color: var(--accent-hover);
   border: 1px solid #bfdbfe;
   cursor: pointer;
   transition: background 0.15s;
@@ -280,7 +280,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f9fafb;
+  background: var(--bg-subtle);
   border-radius: 8px 8px 0 0;
 }
 .my-week__day:last-child { margin-bottom: 0; }
@@ -295,8 +295,8 @@ export default {
 .my-week__day-count {
   font-size: 11px;
   font-weight: 700;
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--color-border);
+  color: var(--color-text-secondary);
   padding: 1px 7px;
   border-radius: 8px;
   min-width: 16px;
@@ -305,20 +305,20 @@ export default {
 
 /* Today highlight */
 .my-week__day--today .my-week__day-header {
-  background: #eff6ff;
+  background: var(--accent-bg);
 }
 .my-week__day--today .my-week__day-label {
-  color: #1d4ed8;
+  color: var(--accent-hover);
   font-weight: 700;
 }
 .my-week__day--today .my-week__day-count {
-  background: #3b82f6;
+  background: var(--accent);
   color: #fff;
 }
 .my-week__today-tag {
   font-size: 10px;
   font-weight: 700;
-  background: #3b82f6;
+  background: var(--accent);
   color: #fff;
   padding: 1px 6px;
   border-radius: 4px;
@@ -328,14 +328,14 @@ export default {
 
 /* Overdue group */
 .my-week__day--overdue .my-week__day-header {
-  background: #fef2f2;
+  background: var(--color-badge-danger-bg);
 }
 .my-week__day--overdue .my-week__day-label {
-  color: #b91c1c;
+  color: var(--color-badge-danger-text);
   font-weight: 700;
 }
 .my-week__day--overdue .my-week__day-count {
-  background: #ef4444;
+  background: var(--color-danger);
   color: #fff;
 }
 
@@ -355,7 +355,7 @@ export default {
   padding: 6px 12px;
   transition: background 0.1s;
 }
-.my-week__task:hover { background: #f9fafb; }
+.my-week__task:hover { background: var(--bg-subtle); }
 .my-week__task--clickable { cursor: pointer; }
 .my-week__task--done { opacity: 0.5; }
 .my-week__task--done .my-week__task-title {
@@ -366,11 +366,11 @@ export default {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--accent);
   flex-shrink: 0;
 }
-.my-week__task-dot--done { background: #22c55e; }
-.my-week__task-dot--overdue { background: #ef4444; }
+.my-week__task-dot--done { background: var(--color-success); }
+.my-week__task-dot--overdue { background: var(--color-danger); }
 
 .my-week__task-title {
   font-size: 13px;
@@ -385,8 +385,8 @@ export default {
 .my-week__task-project {
   font-size: 10px;
   font-weight: 600;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-subtle);
+  color: var(--color-text-secondary);
   padding: 1px 6px;
   border-radius: 4px;
   white-space: nowrap;
@@ -397,8 +397,8 @@ export default {
   transition: background 0.15s, color 0.15s;
 }
 .my-week__task-project--clickable:hover {
-  background: #e8f0fe;
-  color: #1e4a8a;
+  background: var(--accent-bg);
+  color: var(--accent-strong);
 }
 .my-week__task-label {
   width: 8px;
@@ -408,7 +408,7 @@ export default {
 }
 .my-week__task-due {
   font-size: 10px;
-  color: #ef4444;
+  color: var(--color-danger);
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;

@@ -60,7 +60,7 @@ export default {
   height: 28px;
   border-radius: 7px;
   background: rgba(74, 144, 217, 0.1);
-  color: #4a90d9;
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,6 +98,6 @@ export default {
   transition: background 0.15s;
 }
 .workload-widget__row--clickable:hover {
-  background: #f3f4f6;
+  background: var(--bg-subtle);
 }
 </style>

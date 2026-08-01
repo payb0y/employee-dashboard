@@ -63,7 +63,7 @@ export default {
   height: 28px;
   border-radius: 7px;
   background: rgba(14, 165, 233, 0.1);
-  color: #0ea5e9;
+  color: var(--chart-3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,6 +101,6 @@ export default {
   transition: background 0.15s;
 }
 .schedule-widget__row--clickable:hover {
-  background: #f3f4f6;
+  background: var(--bg-subtle);
 }
 </style>

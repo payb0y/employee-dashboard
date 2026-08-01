@@ -195,7 +195,7 @@ export default {
   user-select: none;
   transition: background 0.15s;
 }
-.gantt-widget__header:hover { background: #fafbfd; }
+.gantt-widget__header:hover { background: var(--bg-subtle); }
 .gantt-widget__title {
   font-size: 15px;
   font-weight: 700;
@@ -205,12 +205,12 @@ export default {
   align-items: center;
   gap: 8px;
 }
-.gantt-widget__title svg { color: #6366f1; }
+.gantt-widget__title svg { color: var(--accent); }
 .gantt-widget__count {
   font-size: 11px;
   font-weight: 600;
-  background: #eef2ff;
-  color: #4338ca;
+  background: var(--accent-bg);
+  color: var(--accent-hover);
   padding: 2px 8px;
   border-radius: 8px;
 }
@@ -262,7 +262,7 @@ export default {
 .gantt-chart__ticks {
   position: relative;
   height: 22px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
 }
 .gantt-chart__tick {
   position: absolute;
@@ -279,8 +279,8 @@ export default {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+  background: var(--color-danger);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--color-danger) 45%, transparent);
   z-index: 3;
   pointer-events: none;
 }
@@ -289,7 +289,7 @@ export default {
   top: 3px;
   left: 50%;
   transform: translateX(-50%);
-  background: #ef4444;
+  background: var(--color-danger);
   color: #fff;
   font-size: 9px;
   font-weight: 700;
@@ -297,13 +297,13 @@ export default {
   border-radius: 4px;
   white-space: nowrap;
   letter-spacing: 0.05em;
-  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 1px 4px color-mix(in oklab, var(--color-danger) 40%, transparent);
 }
 
 /* Group header */
 .gantt-chart__group-header {
   margin-top: 8px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--bg-subtle);
 }
 .gantt-chart__group-name {
   font-size: 11px;
@@ -319,7 +319,7 @@ export default {
   padding: 2px 0;
 }
 .gantt-chart__row:hover {
-  background: #fafbfd;
+  background: var(--bg-subtle);
 }
 .gantt-chart__item-label {
   font-size: 12px;
@@ -338,8 +338,8 @@ export default {
   text-transform: capitalize;
   flex-shrink: 0;
 }
-.gantt-chart__item-type--phase { background: #e0f2fe; color: #0369a1; }
-.gantt-chart__item-type--milestone { background: #fef3c7; color: #92400e; }
+.gantt-chart__item-type--phase { background: var(--accent-bg); color: var(--accent-on-bg); }
+.gantt-chart__item-type--milestone { background: var(--color-badge-warning-bg); color: var(--color-badge-warning-text); }
 
 /* Phase bar */
 .gantt-chart__bar {

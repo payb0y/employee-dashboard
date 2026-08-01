@@ -150,8 +150,8 @@ export default {
 .proj-map__count {
   font-size: 11px;
   font-weight: 600;
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: var(--chart-5-bg);
+  color: var(--chart-5);
   padding: 2px 8px;
   border-radius: 8px;
 }
@@ -160,7 +160,7 @@ export default {
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
-  background: #f0f1f5;
+  background: var(--bg-inset);
 }
 .proj-map__empty {
   font-size: 13px;

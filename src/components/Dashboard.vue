@@ -1,5 +1,8 @@
 <template>
-  <div class="emp-dashboard">
+  <!-- iz-app opts this subtree into the theme's primitive layer: it supplies the
+       generic token names these widgets read (see server.css §8 "App token
+       bridge") and is the ancestor the .iz-app-scoped primitives require. -->
+  <div class="emp-dashboard iz-app">
     <!-- No Organization State -->
     <div v-if="!data.organization" class="emp-dashboard__empty">
       <div class="emp-dashboard__empty-icon">
@@ -219,17 +222,15 @@ export default {
 
 <style>
 /* ── Nextcloud style isolation ──────────────────────────────── */
+/* Page backdrop follows the In Zicht theme. Forcing a light ground here is
+   what stops an app following dark mode. */
 #app-content:has(.emp-dashboard) {
-  background-color: #f0f1f5 !important;
+  background: var(--image-background);
   padding: 0 !important;
 }
 #employee-dashboard-root {
-  background-color: #f0f1f5 !important;
+  background: var(--image-background);
   min-height: 100vh;
-  color: #1a1a2e !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial,
-    sans-serif !important;
 }
 
 /* Reset headings — Nextcloud adds borders, padding, and themed colors */
@@ -243,7 +244,7 @@ export default {
   border-bottom: none !important;
   padding: 0 !important;
   margin: 0 !important;
-  color: #1a1a2e !important;
+  color: var(--color-text-primary) !important;
   font-family: inherit !important;
   line-height: 1.4 !important;
   background: none !important;
@@ -275,8 +276,8 @@ export default {
 #employee-dashboard-root input,
 #employee-dashboard-root textarea {
   font-family: inherit;
-  color: #1a1a2e;
-  background: #fff;
+  color: var(--color-text-primary);
+  background: var(--bg-card);
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -299,8 +300,8 @@ export default {
 
 /* Prevent Nextcloud dark mode / theming from overriding our colors */
 #employee-dashboard-root * {
-  --color-main-text: #1a1a2e;
-  --color-text-maxcontrast: #6b7280;
+  --color-main-text: var(--color-text-primary);
+  --color-text-maxcontrast: var(--color-text-secondary);
 }
 
 /* Reset SVG colors — Nextcloud can theme these via fill/stroke */
@@ -316,34 +317,16 @@ export default {
 
 <style scoped>
 .emp-dashboard {
-  --bg-page: #f0f1f5;
-  --bg-card: #ffffff;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --radius-card: 12px;
-  --color-text-primary: #1a1a2e;
-  --color-text-secondary: #6b7280;
-  --color-text-muted: #9ca3af;
-  --color-blue: #4a90d9;
-  --color-purple: #c878c8;
-  --color-success: #2e7d32;
-  --color-warning: #f59e0b;
-  --color-danger: #d94040;
-  --color-border: #e5e7eb;
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-2xl: 40px;
+  /* Tokens come from the theme's `.iz-app` bridge (server.css §8). The local
+     block that used to live here is gone — one definition, shared with
+     adminpage and superadminpage. */
 
-  background-color: var(--bg-page);
+
+  background: var(--bg-page);
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--spacing-lg);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial,
-    sans-serif;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   color: var(--color-text-primary);
 }
 
@@ -374,8 +357,8 @@ export default {
   width: 80px;
   height: 80px;
   border-radius: 20px;
-  background: #e8f0fe;
-  color: #4a90d9;
+  background: var(--accent-bg);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;

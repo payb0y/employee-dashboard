@@ -325,7 +325,7 @@ export default {
   user-select: none;
   transition: background 0.15s;
 }
-.project-drawer__header:hover { background: #fafbfd; }
+.project-drawer__header:hover { background: var(--bg-subtle); }
 .project-drawer__title {
   font-size: 15px;
   font-weight: 700;
@@ -335,7 +335,7 @@ export default {
   align-items: center;
   gap: 8px;
 }
-.project-drawer__title svg { color: #c878c8; }
+.project-drawer__title svg { color: var(--accent); }
 .project-drawer__chevron {
   color: var(--color-text-muted, #9ca3af);
   transition: transform 0.3s;
@@ -373,9 +373,9 @@ export default {
   border-radius: 6px;
   flex-shrink: 0;
 }
-.project-drawer__project-status--active { background: #dcfce7; color: #166534; }
-.project-drawer__project-status--completed { background: #e0f2fe; color: #0369a1; }
-.project-drawer__project-status--archived { background: #f3f4f6; color: #6b7280; }
+.project-drawer__project-status--active { background: var(--color-badge-success-bg); color: var(--color-badge-success-text); }
+.project-drawer__project-status--completed { background: var(--accent-bg); color: var(--accent-on-bg); }
+.project-drawer__project-status--archived { background: var(--bg-subtle); color: var(--color-text-secondary); }
 
 /* Meta grid */
 .project-drawer__meta-grid {
@@ -424,11 +424,11 @@ export default {
   gap: 5px;
   font-size: 12px;
   font-weight: 600;
-  color: #4a90d9;
+  color: var(--accent);
   text-decoration: none;
   padding: 6px 12px;
   border-radius: 8px;
-  background: #e8f0fe;
+  background: var(--accent-bg);
   transition: background 0.15s;
 }
 .project-drawer__link:hover { background: #d4e5fb; }
@@ -437,7 +437,7 @@ export default {
 .project-drawer__tabs {
   display: flex;
   gap: 2px;
-  border-bottom: 2px solid #f3f4f6;
+  border-bottom: 2px solid var(--bg-subtle);
   margin-bottom: 14px;
 }
 .project-drawer__tab {
@@ -457,19 +457,19 @@ export default {
 }
 .project-drawer__tab:hover { color: var(--color-text-primary, #1a1a2e); }
 .project-drawer__tab--active {
-  color: #4a90d9;
-  border-bottom-color: #4a90d9;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 .project-drawer__tab-count {
   font-size: 10px;
   font-weight: 700;
-  background: #f3f4f6;
+  background: var(--bg-subtle);
   padding: 1px 5px;
   border-radius: 6px;
 }
 .project-drawer__tab--active .project-drawer__tab-count {
-  background: #e8f0fe;
-  color: #4a90d9;
+  background: var(--accent-bg);
+  color: var(--accent);
 }
 .project-drawer__tab-body {
   min-height: 60px;
@@ -529,7 +529,7 @@ export default {
 .pd-gantt__ticks {
   position: relative;
   height: 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
 }
 .pd-gantt__tick {
   position: absolute;
@@ -544,8 +544,8 @@ export default {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+  background: var(--color-danger);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--color-danger) 45%, transparent);
   z-index: 3;
   pointer-events: none;
 }
@@ -554,7 +554,7 @@ export default {
   top: 3px;
   left: 50%;
   transform: translateX(-50%);
-  background: #ef4444;
+  background: var(--color-danger);
   color: #fff;
   font-size: 9px;
   font-weight: 700;
@@ -562,13 +562,13 @@ export default {
   border-radius: 4px;
   white-space: nowrap;
   letter-spacing: 0.05em;
-  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 1px 4px color-mix(in oklab, var(--color-danger) 40%, transparent);
 }
 .pd-gantt__row {
   min-height: 30px;
   padding: 2px 0;
 }
-.pd-gantt__row:hover { background: #fafbfd; }
+.pd-gantt__row:hover { background: var(--bg-subtle); }
 .pd-gantt__item-label {
   font-size: 11px;
   font-weight: 500;
@@ -586,8 +586,8 @@ export default {
   text-transform: capitalize;
   flex-shrink: 0;
 }
-.pd-gantt__item-type--phase { background: #e0f2fe; color: #0369a1; }
-.pd-gantt__item-type--milestone { background: #fef3c7; color: #92400e; }
+.pd-gantt__item-type--phase { background: var(--accent-bg); color: var(--accent-on-bg); }
+.pd-gantt__item-type--milestone { background: var(--color-badge-warning-bg); color: var(--color-badge-warning-text); }
 .pd-gantt__bar {
   position: absolute;
   top: 4px;
@@ -617,7 +617,7 @@ export default {
 /* Notes */
 .project-drawer__note-card {
   padding: 12px;
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--bg-subtle);
   border-radius: 10px;
   margin-bottom: 8px;
 }
@@ -652,12 +652,12 @@ export default {
   padding: 8px 0;
   position: relative;
 }
-.project-drawer__event + .project-drawer__event { border-top: 1px solid #f9fafb; }
+.project-drawer__event + .project-drawer__event { border-top: 1px solid var(--bg-subtle); }
 .project-drawer__event-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #d1d5db;
+  background: var(--color-border-strong);
   flex-shrink: 0;
   margin-top: 6px;
 }

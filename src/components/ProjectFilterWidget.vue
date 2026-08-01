@@ -245,7 +245,7 @@ export default {
   user-select: none;
   transition: background 0.15s;
 }
-.proj-filter__header:hover { background: #fafbfd; }
+.proj-filter__header:hover { background: var(--bg-subtle); }
 .proj-filter__title {
   font-size: 15px;
   font-weight: 700;
@@ -258,8 +258,8 @@ export default {
 .proj-filter__badge {
   font-size: 11px;
   font-weight: 600;
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: var(--chart-5-bg);
+  color: var(--chart-5);
   padding: 2px 8px;
   border-radius: 8px;
 }
@@ -295,13 +295,13 @@ export default {
   border-radius: 8px;
   font-size: 13px;
   color: var(--color-text-primary, #1a1a2e);
-  background: #fff;
+  background: var(--bg-card);
   outline: none;
   width: 200px;
   transition: border-color 0.15s;
 }
 .proj-filter__tabs-search-input:focus {
-  border-color: #4a90d9;
+  border-color: var(--accent);
 }
 
 .proj-filter__tabs-status-select {
@@ -310,20 +310,20 @@ export default {
   border-radius: 8px;
   font-size: 13px;
   color: var(--color-text-primary, #1a1a2e);
-  background: #fff;
+  background: var(--bg-card);
   outline: none;
   transition: border-color 0.15s;
   cursor: pointer;
 }
 .proj-filter__tabs-status-select:focus {
-  border-color: #4a90d9;
+  border-color: var(--accent);
 }
 
 .proj-filter__tabs-clear {
   padding: 5px 12px;
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-muted, #9ca3af);
@@ -331,9 +331,9 @@ export default {
   transition: all 0.15s;
 }
 .proj-filter__tabs-clear:hover {
-  background: #fef2f2;
-  border-color: #ef4444;
-  color: #ef4444;
+  background: var(--color-badge-danger-bg);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 /* ── Tab strip ── */
@@ -348,7 +348,7 @@ export default {
   height: 4px;
 }
 .proj-filter__tabs-strip::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--color-border-strong);
   border-radius: 2px;
 }
 
@@ -360,7 +360,7 @@ export default {
   padding: 6px 14px;
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 20px;
-  background: #fff;
+  background: var(--bg-card);
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-primary, #1a1a2e);
@@ -370,13 +370,13 @@ export default {
   transition: all 0.15s;
 }
 .proj-filter__tab:hover {
-  background: #f8fafc;
-  border-color: #c878c8;
+  background: var(--bg-subtle);
+  border-color: var(--accent);
 }
 .proj-filter__tab--active {
-  background: linear-gradient(135deg, #c878c8, #d494d4);
+  background: linear-gradient(135deg, var(--accent), var(--accent));
   color: #fff;
-  border-color: #c878c8;
+  border-color: var(--accent);
 }
 
 /* ── Status dot ── */
@@ -390,13 +390,13 @@ export default {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 .proj-filter__tab-dot--active {
-  background: #22c55e;
+  background: var(--color-success);
 }
 .proj-filter__tab-dot--completed {
-  background: #6366f1;
+  background: var(--accent);
 }
 .proj-filter__tab-dot--archived {
-  background: #6b7280;
+  background: var(--color-text-secondary);
 }
 
 /* ── Tab text ── */
@@ -433,7 +433,7 @@ export default {
   transition: background 0.15s;
 }
 .proj-filter__sticky-toggle:hover {
-  background: #f3f4f6;
+  background: var(--bg-subtle);
 }
 
 /* ── Active filter dot ── */
@@ -444,7 +444,7 @@ export default {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #c878c8;
+  background: var(--accent);
 }
 
 @media (max-width: 700px) {

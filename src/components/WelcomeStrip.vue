@@ -52,7 +52,7 @@ export default {
   box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
   padding: var(--spacing-md, 16px) var(--spacing-lg, 24px);
   margin-bottom: var(--spacing-xl, 32px);
-  border-left: 4px solid #4a90d9;
+  border-left: 4px solid var(--accent);
 }
 .welcome-strip__left {
   display: flex;
@@ -63,7 +63,7 @@ export default {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #4a90d9, #6cb0f0);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
   color: #fff;
   font-size: 22px;
   font-weight: 700;
@@ -103,16 +103,16 @@ export default {
   border-radius: 10px;
 }
 .welcome-strip__badge--danger {
-  background: #fde8e8;
-  color: #b91c1c;
+  background: var(--color-badge-danger-bg);
+  color: var(--color-badge-danger-text);
 }
 .welcome-strip__badge--warning {
-  background: #fef3cd;
-  color: #92400e;
+  background: var(--color-badge-warning-bg);
+  color: var(--color-badge-warning-text);
 }
 .welcome-strip__badge--info {
-  background: #e8f0fe;
-  color: #1e4a8a;
+  background: var(--accent-bg);
+  color: var(--accent-strong);
 }
 .welcome-strip__badge--clickable {
   cursor: pointer;
