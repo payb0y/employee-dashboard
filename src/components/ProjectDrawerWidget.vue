@@ -59,13 +59,13 @@
         </div>
 
         <!-- Tab navigation -->
-        <div class="project-drawer__tabs">
+        <div class="iz-tabs project-drawer__tabs">
           <button v-for="tab in tabs" :key="tab.key"
-            class="project-drawer__tab"
-            :class="{ 'project-drawer__tab--active': activeTab === tab.key }"
+            class="iz-tab"
+            :class="{ 'iz-tab--active': activeTab === tab.key }"
             @click="activeTab = tab.key">
             {{ tab.label }}
-            <span v-if="tab.count !== undefined" class="project-drawer__tab-count">{{ tab.count }}</span>
+            <span v-if="tab.count !== undefined" class="iz-tab__count">{{ tab.count }}</span>
           </button>
         </div>
 
@@ -430,10 +430,10 @@ export default {
 .project-drawer__link:hover { background: #d4e5fb; }
 
 /* Tabs */
+/* Bar, tab, active underline and count pill all come from .iz-tabs / .iz-tab
+   / .iz-tab__count — including the dark-mode contrast lift on the active
+   label that the theme documents. Only the spacing below the bar is local. */
 .project-drawer__tabs {
-  display: flex;
-  gap: 2px;
-  border-bottom: 2px solid var(--bg-subtle);
   margin-bottom: 14px;
 }
 .project-drawer__tab {

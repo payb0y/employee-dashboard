@@ -16,8 +16,8 @@
       <button
         v-for="tab in tabs"
         :key="tab"
-        class="tasks-board__tab"
-        :class="{ 'tasks-board__tab--active': activeTab === tab }"
+        class="iz-chip"
+        :class="{ 'iz-chip--active': activeTab === tab }"
         @click="activeTab = tab; currentPage = 1"
       >
         {{ tab }}
@@ -172,12 +172,12 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="tasks-board__pagination">
-        <button class="tasks-board__page-btn" :disabled="currentPage <= 1" @click="currentPage--">
+      <div v-if="totalPages > 1" class="iz-pagination tasks-board__pagination">
+        <button class="iz-btn iz-btn--icon tasks-board__page-btn" :disabled="currentPage <= 1" @click="currentPage--">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <span class="tasks-board__page-info">{{ currentPage }} / {{ totalPages }}</span>
-        <button class="tasks-board__page-btn" :disabled="currentPage >= totalPages" @click="currentPage++">
+        <button class="iz-btn iz-btn--icon tasks-board__page-btn" :disabled="currentPage >= totalPages" @click="currentPage++">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -349,7 +349,18 @@ export default {
 }
 .tasks-board__tab:hover { background: var(--color-border); }
 .tasks-board__tab--active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.tasks-board__tab-count { font-size: 10px; font-weight: 700; min-width: 16px; text-align: center; padding: 0 4px; border-radius: 6px; background: rgba(255,255,255,0.2); }
+/* Count badge inside a chip. currentColor at low alpha rather than a fixed
+   white wash: the chip's ground changes between rest and active and between
+   schemes, and a hardcoded white only worked on the old solid-accent pill. */
+.tasks-board__tab-count {
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  text-align: center;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: color-mix(in oklab, currentColor 16%, transparent);
+}
 .tasks-board__tab--active .tasks-board__tab-count { background: rgba(255,255,255,0.25); }
 
 /* Search */
@@ -464,17 +475,17 @@ export default {
 .task-detail__attachment-by { font-size: 11px; color: var(--color-text-muted); }
 
 /* Pagination */
+/* Bar geometry from .iz-pagination; the buttons are .iz-btn--icon. This one
+   centres rather than splitting left/right because it has no range label to
+   put on the other side. */
 .tasks-board__pagination {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--bg-subtle);
+  justify-content: center;
+  margin-top: 16px;
+  border-top: 1px solid var(--color-border);
 }
 .tasks-board__page-btn {
-  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--color-border);
-  background: var(--bg-card); display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--accent); transition: all 0.15s;
+  color: var(--accent);
 }
-.tasks-board__page-btn:hover:not(:disabled) { background: var(--accent-bg); }
-.tasks-board__page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .tasks-board__page-info { font-size: 12px; font-weight: 600; color: var(--color-text-secondary, #6b7280); }
 
 @media (max-width: 700px) {
