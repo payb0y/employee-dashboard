@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
-    <id>employee_dashboard</id>
+    <id>employee-dashboard</id>
     <name>Employee Dashboard</name>
     <summary>Personal task and project workspace for employees</summary>
     <description><![CDATA[An employee-facing dashboard showing assigned tasks, projects, milestones, and resources scoped to the logged-in user.]]></description>
-    <version>0.3.2</version>
+    <version>0.3.3</version>
     <licence>agpl</licence>
     <author mail="admin@example.com">Employee Dashboard Developer</author>
     <namespace>EmployeeDashboard</namespace>
@@ -17,7 +17,7 @@
     <navigations>
         <navigation>
             <name>My Dashboard</name>
-            <route>employee_dashboard.page.index</route>
+            <route>employee-dashboard.page.index</route>
             <icon>app.svg</icon>
             <order>11</order>
         </navigation>

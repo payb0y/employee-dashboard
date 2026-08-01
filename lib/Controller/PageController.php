@@ -20,7 +20,7 @@ class PageController extends Controller {
      * @NoCSRFRequired
      */
     public function index(): TemplateResponse {
-        Util::addScript('employee_dashboard', 'employee_dashboard-main');
-        return new TemplateResponse('employee_dashboard', 'index');
+        Util::addScript('employee-dashboard', 'employee-dashboard-main');
+        return new TemplateResponse('employee-dashboard', 'index');
     }
 }
