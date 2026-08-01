@@ -781,7 +781,7 @@ class EmployeeService {
 
         $userAgent = sprintf(
             'Nextcloud-EmployeeDashboard/%s (%s)',
-            $this->appManager->getAppVersion('employee-dashboard'),
+            $this->appManager->getAppVersion('employee_dashboard'),
             $this->resolveInstanceHost()
         );
 
@@ -801,7 +801,7 @@ class EmployeeService {
             ]);
         } catch (\Throwable $e) {
             $this->logger->warning('Nominatim request failed', [
-                'app'       => 'employee-dashboard',
+                'app'       => 'employee_dashboard',
                 'exception' => $e,
             ]);
             usleep(1_000_000);
@@ -810,7 +810,7 @@ class EmployeeService {
 
         if ($response->getStatusCode() !== 200) {
             $this->logger->warning('Nominatim non-200', [
-                'app'    => 'employee-dashboard',
+                'app'    => 'employee_dashboard',
                 'status' => $response->getStatusCode(),
             ]);
             usleep(1_000_000);

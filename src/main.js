@@ -41,7 +41,7 @@ if (mountEl) {
     methods: {
       async fetchData() {
         try {
-          var url = generateUrl("/apps/employee-dashboard/api/data");
+          var url = generateUrl("/apps/employee_dashboard/api/data");
           var response = await axios.get(url);
           this.dashboardData = response.data;
         } catch (e) {
