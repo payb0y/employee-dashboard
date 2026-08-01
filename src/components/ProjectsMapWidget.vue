@@ -1,5 +1,5 @@
 <template>
-  <section class="proj-map">
+  <section class="iz-panel proj-map">
     <header class="proj-map__header">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M1 6v15l7-3 8 3 7-3V3l-7 3-8-3-7 3z" />
@@ -128,12 +128,7 @@ export default {
 </script>
 
 <style scoped>
-.proj-map {
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-card, 12px);
-  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  padding: var(--spacing-lg, 24px);
-  margin-bottom: var(--spacing-lg, 24px);
+.proj-map {  margin-bottom: var(--spacing-lg, 24px);
   isolation: isolate;
 }
 .proj-map__header {

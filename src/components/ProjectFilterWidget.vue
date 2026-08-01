@@ -18,12 +18,12 @@
             <input
               v-model="tabSearch"
               type="text"
-              class="proj-filter__tabs-search-input"
+              class="iz-input proj-filter__tabs-search-input"
               placeholder="Search projects…"
             />
             <select
               v-model="tabStatusFilter"
-              class="proj-filter__tabs-status-select"
+              class="iz-select proj-filter__tabs-status-select"
             >
               <option value="">All Statuses</option>
               <option value="Active">Active</option>
@@ -32,7 +32,7 @@
             </select>
             <select
               v-model="tabTaskDueFilter"
-              class="proj-filter__tabs-status-select"
+              class="iz-select proj-filter__tabs-status-select"
             >
               <option value="">All Task Due</option>
               <option value="overdue">Has Overdue</option>
@@ -42,7 +42,7 @@
             </select>
             <select
               v-model="tabTaskStatusFilter"
-              class="proj-filter__tabs-status-select"
+              class="iz-select proj-filter__tabs-status-select"
             >
               <option value="">All Task Status</option>
               <option value="open">Has Open Tasks</option>
@@ -289,34 +289,16 @@ export default {
   flex-wrap: wrap;
 }
 
+/* Chrome from .iz-input; only this field's fixed width is local. */
 .proj-filter__tabs-search-input {
-  padding: 6px 12px;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--color-text-primary, #1a1a2e);
-  background: var(--bg-card);
-  outline: none;
   width: 200px;
-  transition: border-color 0.15s;
-}
-.proj-filter__tabs-search-input:focus {
-  border-color: var(--accent);
 }
 
+/* Chrome from .iz-select. width:auto because the primitive is width:100% —
+   right for a stacked form, wrong for these three sitting in a toolbar row. */
 .proj-filter__tabs-status-select {
-  padding: 6px 10px;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--color-text-primary, #1a1a2e);
-  background: var(--bg-card);
-  outline: none;
-  transition: border-color 0.15s;
+  width: auto;
   cursor: pointer;
-}
-.proj-filter__tabs-status-select:focus {
-  border-color: var(--accent);
 }
 
 .proj-filter__tabs-clear {

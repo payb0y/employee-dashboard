@@ -1,5 +1,5 @@
 <template>
-  <section class="my-week">
+  <section class="iz-panel my-week">
     <div class="my-week__header" @click="collapsed = !collapsed">
       <h3 class="my-week__title">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -177,11 +177,7 @@ export default {
 </script>
 
 <style scoped>
-.my-week {
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-card, 12px);
-  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  margin-bottom: var(--spacing-xl, 32px);
+.my-week {  margin-bottom: var(--spacing-xl, 32px);
   overflow: hidden;
 }
 .my-week__header {

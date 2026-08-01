@@ -1,5 +1,5 @@
 <template>
-  <section class="gantt-widget">
+  <section class="iz-panel gantt-widget">
     <div class="gantt-widget__header" @click="collapsed = !collapsed">
       <h3 class="gantt-widget__title">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -15,7 +15,7 @@
     </div>
 
     <div v-show="!collapsed" class="gantt-widget__body">
-      <div v-if="!timeline.length" class="gantt-widget__empty">No timeline items found.</div>
+      <div v-if="!timeline.length" class="iz-empty gantt-widget__empty">No timeline items found.</div>
 
       <template v-else>
         <!-- Date axis -->
@@ -179,11 +179,7 @@ export default {
 </script>
 
 <style scoped>
-.gantt-widget {
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-card, 12px);
-  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  margin-bottom: var(--spacing-xl, 32px);
+.gantt-widget {  margin-bottom: var(--spacing-xl, 32px);
   overflow: hidden;
 }
 .gantt-widget__header {
@@ -221,12 +217,6 @@ export default {
 .gantt-widget__chevron--rotated { transform: rotate(180deg); }
 .gantt-widget__body {
   padding: 0 var(--spacing-lg, 24px) var(--spacing-lg, 24px);
-}
-.gantt-widget__empty {
-  text-align: center;
-  padding: 20px 0;
-  font-size: 13px;
-  color: var(--color-text-muted, #9ca3af);
 }
 
 /* Chart */

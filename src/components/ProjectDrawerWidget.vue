@@ -1,5 +1,5 @@
 <template>
-  <section class="project-drawer">
+  <section class="iz-panel project-drawer">
     <div class="project-drawer__header" @click="collapsed = !collapsed">
       <h3 class="project-drawer__title">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -71,7 +71,7 @@
 
         <!-- Tab: Timeline -->
         <div v-if="activeTab === 'timeline'" class="project-drawer__tab-body">
-          <div v-if="projectTimeline.length === 0" class="project-drawer__empty-tab">No timeline items.</div>
+          <div v-if="projectTimeline.length === 0" class="iz-empty project-drawer__empty-tab">No timeline items.</div>
           <template v-else>
             <div class="pd-gantt">
               <!-- Date axis -->
@@ -108,7 +108,7 @@
 
         <!-- Tab: Notes -->
         <div v-if="activeTab === 'notes'" class="project-drawer__tab-body">
-          <div v-if="projectNotes.length === 0" class="project-drawer__empty-tab">No notes for this project.</div>
+          <div v-if="projectNotes.length === 0" class="iz-empty project-drawer__empty-tab">No notes for this project.</div>
 
           <div v-for="note in projectNotes" :key="note.id" class="project-drawer__note-card">
             <div class="project-drawer__note-header">
@@ -121,7 +121,7 @@
 
         <!-- Tab: Activity -->
         <div v-if="activeTab === 'activity'" class="project-drawer__tab-body">
-          <div v-if="projectEvents.length === 0" class="project-drawer__empty-tab">No activity recorded.</div>
+          <div v-if="projectEvents.length === 0" class="iz-empty project-drawer__empty-tab">No activity recorded.</div>
           <div class="project-drawer__activity">
             <div v-for="event in projectEvents" :key="event.id" class="project-drawer__event">
               <div class="project-drawer__event-dot"></div>
@@ -309,11 +309,7 @@ export default {
 </script>
 
 <style scoped>
-.project-drawer {
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-card, 12px);
-  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  margin-bottom: var(--spacing-xl, 32px);
+.project-drawer {  margin-bottom: var(--spacing-xl, 32px);
   overflow: hidden;
 }
 .project-drawer__header {
@@ -473,13 +469,6 @@ export default {
 }
 .project-drawer__tab-body {
   min-height: 60px;
-}
-.project-drawer__empty-tab {
-  text-align: center;
-  padding: 20px 0;
-  font-size: 13px;
-  color: var(--color-text-muted, #9ca3af);
-  font-style: italic;
 }
 
 /* Section titles */

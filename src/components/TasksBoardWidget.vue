@@ -1,5 +1,5 @@
 <template>
-  <section class="tasks-board">
+  <section class="iz-panel tasks-board">
     <div class="tasks-board__header">
       <div class="tasks-board__icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -27,17 +27,17 @@
 
     <!-- Search -->
     <div class="tasks-board__filters">
-      <input v-model="search" type="text" class="tasks-board__search" placeholder="Search tasks…" @input="currentPage = 1" />
+      <input v-model="search" type="text" class="iz-input tasks-board__search" placeholder="Search tasks…" @input="currentPage = 1" />
     </div>
 
     <!-- Empty state -->
-    <div v-if="tasks.length === 0" class="tasks-board__empty">
+    <div v-if="tasks.length === 0" class="iz-empty tasks-board__empty">
       <p>No tasks assigned yet.</p>
       <p class="tasks-board__empty-hint">Tasks will appear here once you are assigned to Deck cards.</p>
     </div>
 
     <!-- No results for filter -->
-    <div v-else-if="filteredTasks.length === 0" class="tasks-board__empty">
+    <div v-else-if="filteredTasks.length === 0" class="iz-empty tasks-board__empty">
       <p>No tasks match the current filter.</p>
     </div>
 
@@ -329,12 +329,7 @@ export default {
 </script>
 
 <style scoped>
-.tasks-board {
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-card, 12px);
-  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  padding: var(--spacing-lg, 24px);
-  margin-bottom: var(--spacing-xl, 32px);
+.tasks-board {  margin-bottom: var(--spacing-xl, 32px);
 }
 .tasks-board__header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .tasks-board__icon {
@@ -359,14 +354,9 @@ export default {
 
 /* Search */
 .tasks-board__filters { margin-bottom: 12px; }
-.tasks-board__search {
-  width: 100%; max-width: 320px; padding: 7px 12px; border: 1px solid var(--color-border); border-radius: 8px;
-  font-size: 12px; color: var(--color-text-primary, #1a1a2e); background: #fff; outline: none; transition: border-color 0.15s;
-}
 .tasks-board__search:focus { border-color: var(--accent); }
 
 /* Empty */
-.tasks-board__empty { text-align: center; padding: 32px 16px; color: var(--color-text-muted, #9ca3af); }
 .tasks-board__empty p { margin: 0 0 4px 0; font-size: 14px; }
 .tasks-board__empty-hint { font-size: 12px; font-style: italic; }
 

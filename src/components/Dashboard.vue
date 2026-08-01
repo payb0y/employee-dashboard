@@ -4,7 +4,7 @@
        bridge") and is the ancestor the .iz-app-scoped primitives require. -->
   <div class="emp-dashboard iz-app">
     <!-- No Organization State -->
-    <div v-if="!data.organization" class="emp-dashboard__empty">
+    <div v-if="!data.organization" class="iz-empty emp-dashboard__empty">
       <div class="emp-dashboard__empty-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />

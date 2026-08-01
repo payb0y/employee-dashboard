@@ -1,5 +1,5 @@
 <template>
-  <div class="schedule-widget">
+  <div class="iz-panel schedule-widget">
     <div class="schedule-widget__header">
       <div class="schedule-widget__icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -42,12 +42,7 @@ export default {
 </script>
 
 <style scoped>
-.schedule-widget {
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-card, 12px);
-  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  padding: var(--spacing-md, 16px) var(--spacing-lg, 24px);
-  flex: 1;
+.schedule-widget {  flex: 1;
 }
 .schedule-widget:hover {
   box-shadow: var(--shadow-card-hover, 0 4px 12px rgba(0, 0, 0, 0.1));

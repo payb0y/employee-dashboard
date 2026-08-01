@@ -1,5 +1,5 @@
 <template>
-  <div class="focus-widget">
+  <div class="iz-panel focus-widget">
     <div class="focus-widget__header">
       <div class="focus-widget__icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -120,12 +120,7 @@ export default {
 </script>
 
 <style scoped>
-.focus-widget {
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-card, 12px);
-  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  padding: var(--spacing-lg, 24px);
-  min-height: 200px;
+.focus-widget {  min-height: 200px;
 }
 .focus-widget:hover {
   box-shadow: var(--shadow-card-hover, 0 4px 12px rgba(0, 0, 0, 0.1));

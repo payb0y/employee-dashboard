@@ -1,5 +1,5 @@
 <template>
-  <div class="welcome-strip">
+  <div class="iz-panel welcome-strip">
     <div class="welcome-strip__left">
       <span class="welcome-strip__avatar">{{ initial }}</span>
       <div class="welcome-strip__text">
@@ -43,14 +43,9 @@ export default {
 </script>
 
 <style scoped>
-.welcome-strip {
-  display: flex;
+.welcome-strip {  display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-card, #fff);
-  border-radius: var(--radius-card, 12px);
-  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
-  padding: var(--spacing-md, 16px) var(--spacing-lg, 24px);
   margin-bottom: var(--spacing-xl, 32px);
   border-left: 4px solid var(--accent);
 }
