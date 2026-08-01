@@ -22,10 +22,19 @@
 
     <template v-else>
       <!-- 1. Welcome Strip -->
-      <WelcomeStrip :employee="data.employee" :organization="data.organization" :focus-now="derivedFocusNow" :workload="derivedWorkload" @filter="onFocusFilter" />
-
-      <!-- 2. My Projects — Filter + Pill Strip -->
-      <ProjectFilterWidget :projects="data.projects" :tasks="data.tasks" :active-project-id="activeProjectId" @filter-project="onProjectFilter" />
+      <!-- 1+2. One sticky header: identity and counts on top, the project
+           switcher below, filters folding away between them once it sticks. -->
+      <DashboardHeader
+        :employee="data.employee"
+        :organization="data.organization"
+        :focus-now="derivedFocusNow"
+        :workload="derivedWorkload"
+        :projects="data.projects"
+        :tasks="data.tasks"
+        :active-project-id="activeProjectId"
+        @filter="onFocusFilter"
+        @filter-project="onProjectFilter"
+      />
 
       <!-- 2.5 Map of all (or filtered) project locations -->
       <ProjectsMapWidget
@@ -59,28 +68,26 @@
 </template>
 
 <script>
-import WelcomeStrip from "./WelcomeStrip.vue";
 import FocusNowWidget from "./FocusNowWidget.vue";
 import WorkloadWidget from "./WorkloadWidget.vue";
 import ScheduleWidget from "./ScheduleWidget.vue";
 import TasksBoardWidget from "./TasksBoardWidget.vue";
 import MyWeekWidget from "./MyWeekWidget.vue";
 import GanttWidget from "./GanttWidget.vue";
-import ProjectFilterWidget from "./ProjectFilterWidget.vue";
+import DashboardHeader from "./DashboardHeader.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
 import ProjectsMapWidget from "./ProjectsMapWidget.vue";
 
 export default {
   name: "Dashboard",
   components: {
-    WelcomeStrip,
     FocusNowWidget,
     WorkloadWidget,
     ScheduleWidget,
     TasksBoardWidget,
     MyWeekWidget,
     GanttWidget,
-    ProjectFilterWidget,
+    DashboardHeader,
     ProjectDrawerWidget,
     ProjectsMapWidget,
   },
