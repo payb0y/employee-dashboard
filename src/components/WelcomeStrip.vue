@@ -11,13 +11,13 @@
       </div>
     </div>
     <div class="welcome-strip__right">
-      <span v-if="focusNow.overdue > 0" class="welcome-strip__badge welcome-strip__badge--danger welcome-strip__badge--clickable" @click="$emit('filter', 'Overdue')">
+      <span v-if="focusNow.overdue > 0" class="iz-badge iz-badge--danger welcome-strip__badge--clickable" @click="$emit('filter', 'Overdue')">
         {{ focusNow.overdue }} overdue
       </span>
-      <span v-if="focusNow.dueToday > 0" class="welcome-strip__badge welcome-strip__badge--warning welcome-strip__badge--clickable" @click="$emit('filter', 'Today')">
+      <span v-if="focusNow.dueToday > 0" class="iz-badge iz-badge--warning welcome-strip__badge--clickable" @click="$emit('filter', 'Today')">
         {{ focusNow.dueToday }} due today
       </span>
-      <span class="welcome-strip__badge welcome-strip__badge--info welcome-strip__badge--clickable" @click="$emit('filter', 'All Open')">
+      <span class="iz-badge iz-badge--accent welcome-strip__badge--clickable" @click="$emit('filter', 'All Open')">
         {{ workload.open }} open
       </span>
     </div>

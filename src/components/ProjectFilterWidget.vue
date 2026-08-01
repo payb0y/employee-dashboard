@@ -8,7 +8,7 @@
         <h3 class="proj-filter__title">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12.46V19l-4 2V12.46L3 5.5V3z" fill="#8b5cf6" stroke="none"/></svg>
           My Projects
-          <span class="proj-filter__badge">{{ projects.length }}</span>
+          <span class="iz-badge iz-badge--cat-5">{{ projects.length }}</span>
         </h3>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="proj-filter__chevron" :class="{ 'proj-filter__chevron--rotated': collapsed }"><path d="M18 15l-6-6-6 6" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
@@ -369,7 +369,7 @@ export default {
   flex-shrink: 0;
 }
 .proj-filter__tab--active .proj-filter__tab-dot {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 2px var(--bg-card);
 }
 .proj-filter__tab-dot--active {
   background: var(--color-success);

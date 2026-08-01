@@ -427,7 +427,7 @@ export default {
   background: var(--accent-bg);
   transition: background 0.15s;
 }
-.project-drawer__link:hover { background: #d4e5fb; }
+.project-drawer__link:hover { background: var(--accent-bg); }
 
 /* Tabs */
 /* Bar, tab, active underline and count pill all come from .iz-tabs / .iz-tab

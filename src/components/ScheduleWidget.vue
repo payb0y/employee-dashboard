@@ -57,7 +57,7 @@ export default {
   width: 28px;
   height: 28px;
   border-radius: 7px;
-  background: rgba(14, 165, 233, 0.1);
+  background: color-mix(in oklab, var(--chart-3) 12%, transparent);
   color: var(--chart-3);
   display: flex;
   align-items: center;

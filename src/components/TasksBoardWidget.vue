@@ -361,7 +361,6 @@ export default {
   border-radius: 6px;
   background: color-mix(in oklab, currentColor 16%, transparent);
 }
-.tasks-board__tab--active .tasks-board__tab-count { background: rgba(255,255,255,0.25); }
 
 /* Search */
 .tasks-board__filters { margin-bottom: 12px; }
@@ -382,7 +381,7 @@ export default {
 }
 .tasks-board__item:hover { background: var(--bg-subtle); border-color: var(--color-border); }
 .tasks-board__item--done { opacity: 0.6; }
-.tasks-board__item--selected { border-color: var(--accent); background: #f0f7ff; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.tasks-board__item--selected { border-color: var(--accent); background: var(--accent-bg); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 
 /* Check */
 .tasks-board__item-check {
