@@ -1,5 +1,10 @@
 <template>
-  <div class="dash-header-wrap">
+  <div>
+    <!-- Sticky trigger. See the comment on the observer in mounted(): this has
+         to sit ABOVE the sticky wrapper, because anything inside it moves when
+         the header folds. -->
+    <div ref="sentinel" class="dash-header__sentinel" aria-hidden="true"></div>
+    <div class="dash-header-wrap">
     <section class="dash-header" :class="{ 'dash-header--fixed': isSticky }">
       <!-- Tier 1 — who you are, and what is urgent. Never collapses: these are
            the two things that were lost on scroll when the identity strip was a
@@ -121,6 +126,7 @@
         </button>
       </div>
     </section>
+    </div>
   </div>
 </template>
 
@@ -240,24 +246,37 @@ export default {
   mounted: function () {
     var self = this;
     var scrollRoot = document.getElementById("app-content");
-    if (!scrollRoot) return;
+    var sentinel = this.$refs.sentinel;
+    if (!scrollRoot || !sentinel) return;
 
-    this._onScroll = function () {
-      var wrap = self.$el;
-      if (!wrap) return;
-      var rootRect = scrollRoot.getBoundingClientRect();
-      var wrapRect = wrap.getBoundingClientRect();
-      var shouldStick = wrapRect.top <= rootRect.top;
-      self.isSticky = shouldStick;
-      if (!shouldStick) self.toolbarExpanded = false;
-    };
-
-    this._onScroll();
-    scrollRoot.addEventListener("scroll", this._onScroll, { passive: true });
+    /*
+     * The stuck state is read from a sentinel above the header, not from the
+     * header's own position.
+     *
+     * It used to compare the header's own top against the scroll root's, which
+     * feeds back on itself: crossing the line folds the filter row, the header
+     * loses ~48px, the content below shifts, the scroll position is adjusted to
+     * compensate, and the header crosses the line again in the other direction.
+     * Scrolling slowly up through the threshold made it flip repeatedly and
+     * yanked scrollTop with it — asking for scrollTop 10 landed at 28.
+     *
+     * The sentinel is a zero-height element BEFORE the sticky wrapper, so
+     * nothing the header does to its own height can move it. Stuck simply means
+     * the sentinel has left the top of the scroll root.
+     */
+    this._observer = new IntersectionObserver(
+      function (entries) {
+        var shouldStick = !entries[0].isIntersecting;
+        if (shouldStick === self.isSticky) return;
+        self.isSticky = shouldStick;
+        if (!shouldStick) self.toolbarExpanded = false;
+      },
+      { root: scrollRoot, threshold: 0 }
+    );
+    this._observer.observe(sentinel);
   },
   beforeDestroy: function () {
-    var scrollRoot = document.getElementById("app-content");
-    if (scrollRoot && this._onScroll) scrollRoot.removeEventListener("scroll", this._onScroll);
+    if (this._observer) this._observer.disconnect();
   },
   methods: {
     selectProject: function (project) {
@@ -275,6 +294,14 @@ export default {
 </script>
 
 <style scoped>
+/* Zero-height trigger. Not display:none — an unrendered element never
+   intersects, so the observer would report "stuck" from the start. */
+.dash-header__sentinel {
+  height: 0;
+  margin: 0;
+  padding: 0;
+}
+
 /* Wrapper stays in flow so the page does not jump when the card sticks. */
 .dash-header-wrap {
   margin-bottom: var(--spacing-lg, 24px);
