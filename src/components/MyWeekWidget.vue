@@ -19,12 +19,12 @@
 
       <!-- Week navigation -->
       <div class="my-week__nav">
-        <button class="my-week__nav-btn" title="Previous week" @click.stop="prevWeek">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button class="iz-btn iz-btn--icon my-week__nav-btn" title="Previous week" @click.stop="prevWeek">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <span class="my-week__nav-label">{{ weekLabel }}</span>
-        <button class="my-week__nav-btn" title="Next week" @click.stop="nextWeek">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button class="iz-btn iz-btn--icon my-week__nav-btn" title="Next week" @click.stop="nextWeek">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button v-if="!isCurrentWeek" class="my-week__nav-today" @click.stop="goToCurrentWeek">Today</button>
       </div>
@@ -232,18 +232,13 @@ export default {
   margin-bottom: 4px;
   border-bottom: 1px solid var(--color-border, #e5e7eb);
 }
+/* Box and the min-height reset come from .iz-btn--icon. Only the quieter
+   radius this row uses is local. */
 .my-week__nav-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
   border-radius: 6px;
-  background: none;
-  border: 1px solid var(--color-border, #e5e7eb);
-  color: var(--color-text-secondary, #6b7280);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  /* Quieter than .iz-btn's --iz-text at rest; the hover rule below lifts it to
+     primary, which only reads as a change if rest is secondary. */
+  color: var(--color-text-secondary);
 }
 .my-week__nav-btn:hover {
   background: var(--bg-subtle);
