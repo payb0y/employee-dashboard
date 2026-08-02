@@ -159,124 +159,36 @@ Tables to **never** query in this app: `oc_subscriptions`, `oc_plans`, `oc_admin
 
 ## Design System — the In Zicht theme
 
-**The theme is the source of truth, not this app.** Styling lives in the In Zicht
-Nextcloud theme at `/home/payboy/src/inzicht-nextcloud-theme`, in section 8 of
-`themes/inzicht/core/css/server.css`. That file is shared with `adminpage` and
-`superadminpage`, and it is loaded by Nextcloud *after* every app bundle, with a
-`?v=` cache-buster this app's `js/` does not get.
+**Read `/home/payboy/src/inzicht-nextcloud-theme/USING-THE-THEME.md` before
+touching any style.** It is the canonical guide, shared with `adminpage` and
+`superadminpage`, and it is the file to edit when a rule changes. It covers the
+token bridge, the primitive catalogue, why adding a class without deleting the
+local rule does nothing, Nextcloud core's bare-element traps, panel variants,
+dark mode, and the vendored files.
 
-The old local block of hex values on `.emp-dashboard` is gone. Do not re-add it.
+In short: this app defines no look of its own. `Dashboard.vue`'s root carries
+`iz-app`, which supplies the tokens; chrome comes from the theme's `.iz-*`
+primitives and only layout stays in a component. The old block of hex values on
+`.emp-dashboard` is gone — do not re-add it.
 
-### How tokens reach this app
+### Specific to this app
 
-`Dashboard.vue`'s root carries `iz-app`. That class is what supplies the generic
-token names the widgets read — `--bg-card`, `--color-text-primary`,
-`--radius-card`, `--accent`, `--chart-1`…`--chart-5`, the badge pairs, the
-spacing scale. They are defined once in the theme's "App token bridge".
-
-Two consequences worth knowing:
-
-- **An undefined custom property does not fall back — it invalidates the whole
-  declaration.** `background: var(--nope)` renders as nothing, silently. If a
-  colour disappears, check the token exists before checking anything else.
-- `iz-app` is also the ancestor that `.iz-input`, `.iz-select`, `.iz-close`,
-  `.iz-tab` and the native form-control accent rules are scoped to. Without it
-  they are inert.
-
-### The rule: chrome from the primitive, layout stays local
-
-Before writing a rule for surface, border, radius, shadow, type scale, hover or
-focus — check whether a primitive already does it. Available: `.iz-panel`
-(+ `--list`, `--flush`), `.iz-card`, `.iz-btn` (+ `--primary`, `--danger`,
-`--ghost`, `--sm`, `--icon`), `.iz-input` / `.iz-select` / `.iz-textarea`,
-`.iz-badge` / `.iz-pill` / `.iz-chip` (+ semantic and `--cat-N` variants),
-`.iz-table-wrap` / `.iz-table`, `.iz-row` (+ `--card`, `--expandable`, with
-`.iz-row__header` / `__actions` / `__chevron`), `.iz-identity__avatar`,
-`.iz-tabs` / `.iz-tab` / `.iz-tab__count`, `.iz-pagination`, `.iz-empty`,
-`.iz-meter`, `.iz-spinner`, `.iz-segment`, `.iz-kpi`, `.iz-figure`.
-
-Keep local: grid tracks, widths, gaps between regions, and anything genuinely
-specific to one component.
-
-### Adding the class is only half the job — delete the local rule
-
-Vue scoped CSS compiles to `.my-class[data-v-abc]`, which is specificity
-(0,2,0) — the *same* as `.iz-app .iz-input` — and webpack injects app styles
-after the theme's `<link>`. **On a tie the app wins**, so a local copy left in
-place silently keeps overriding the primitive it was meant to defer to. This has
-already happened twice; the class looked applied and nothing changed.
-
-The inverse trap: rules in an **unscoped** `<style>` block get no `[data-v-…]`,
-so a bare class there is (0,1,0) and *loses* to the theme. Qualify those on a
-parent, e.g. `.my-widget__filters .my-widget__select`.
-
-Audit rather than read — for every element carrying an `.iz-*` class, compare
-the properties the theme rule sets against those any app rule sets on the same
-element. Anything overlapping is a leftover.
-
-### Nextcloud core fights you on bare elements
-
-Core styles `button`, `input`, `select` and headings directly, at (0,1,1), and
-some of it is `!important`. Known traps, all of which have bitten this app:
-
-- **`min-height: 34px` on every bare button.** `min-height` beats `height`, and a
-  parent cannot cap a taller child — the reset belongs on the button. `.iz-btn`
-  variants already do this; a bare `<button>` does not.
-- **Padding on bare buttons** (`7.5px 12px`). On a 28px icon button that leaves
-  ~2px of content box and crushes the glyph. Use `.iz-btn--icon`.
-- **`:focus` repaints the background** in the primary tint at (0,2,1). The theme
-  counters this for `.iz-btn`; a bare button will still flash.
-- **`outline: … !important` on `:focus-visible`.** A custom focus ring on a bare
-  button is dead CSS.
-- `.iz-input` / `.iz-select` are `width: 100%` — right for a stacked form field,
-  wrong for a control in a toolbar row. Say `width: auto` there.
-
-### Panels: pick the right variant
-
-`.iz-panel` pads its content by `--iz-pad-panel` (20px). Use it when the panel
-does the padding. Use **`.iz-panel--list`** when the component pads its own
-header and body — which is the case for every collapsible widget here, because
-the whole header is the click target and its hover tint has to run to the card
-edge. Using the base class on those double-pads them and insets the tint.
-
-### Colours
-
-Never write a hex. Neutrals, text, borders, accent, semantic status and the
-five-colour chart ramp all have tokens. Two blind spots to remember:
-
-- **Colours embedded in `<template>` SVGs** — `stroke="#6b7280"`, marker fills —
-  are outside every `<style>` block and have escaped several sweeps. Use
-  `currentColor` for icons so they follow the button they sit in.
-- Semantic colours mean status. Do not use `--color-success` because green looks
-  nice; an org avatar filled with it reads as "healthy".
-
-### Both schemes, every time
-
-The theme has full light and dark. Check both before calling anything done. The
-common failure is a token that *inverts* being used as a solid fill under white
-text — `--accent-strong` and the `--color-badge-*-text` ramps all lighten on
-dark. For a solid fill use `--accent`, `--color-danger`, `--color-success`, and
-`--iz-accent-text` for the label on top.
-
-Simulate dark without the theming app by setting `data-themes="dark"` and
-`data-theme-dark=""` on both `<body>` and `<html>`.
-
-### Vendored from the theme — copy, do not fork
-
-A Nextcloud theme can only ship CSS and static assets, so anything else is
-vendored and must be updated in every app in the same change:
-
-- `ConfirmDialog.vue` — the one confirmation/notice dialog. **No `alert()` or
-  `confirm()`**; they cannot be themed. The parent owns the busy flag and the
-  error string, and the dialog never closes itself, so a failed action stays
-  open with its reason.
-- `src/lib/izChart.js` — the Chart.js bridge (canvas cannot read CSS variables).
-  Not currently present here: this app draws no canvas charts. Vendor it from
-  `themes/inzicht/core/js/iz-chart.js` the day it does.
-
-### Responsive
-
-Breakpoints in this app: `900px` (2-col → 1-col), `700px`, `600px`.
+- Every collapsible widget uses **`.iz-panel--list`**, not plain `.iz-panel`:
+  the whole header is the click target, so the component pads its own header and
+  body and the hover tint must run to the card edge. Using the base class
+  double-pads them.
+- Header and body are separated by 4px of body padding on top of the header's
+  own — flush, the content reads as part of the header, especially where the
+  first thing below is a bordered box.
+- `DashboardHeader.vue` decides its stuck state from a **zero-height sentinel
+  above the sticky wrapper**, observed with an IntersectionObserver — never from
+  its own position, which folds and therefore moves. Its root is
+  `display: contents` because a real box there would leave the sticky child no
+  room to travel. `#app-content` sets `overflow-anchor: none` for the same
+  reason: the fold changes the document height and scroll anchoring fights it.
+- This app draws **no canvas charts**, so `src/lib/izChart.js` is deliberately
+  not vendored here. Add it from the theme the day that changes.
+- Responsive breakpoints: `900px` (2-col → 1-col), `700px`, `600px`.
 
 ---
 
