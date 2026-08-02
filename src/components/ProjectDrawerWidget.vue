@@ -1,5 +1,5 @@
 <template>
-  <section class="iz-panel project-drawer">
+  <section class="iz-panel iz-panel--list project-drawer">
     <div class="project-drawer__header" @click="collapsed = !collapsed">
       <h3 class="project-drawer__title">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -316,7 +316,9 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-md, 16px) var(--spacing-lg, 24px);
+  /* 20px sides, matching --iz-pad-panel, so this panel's content lines up with
+     the ones that let .iz-panel do their padding. */
+  padding: var(--spacing-md, 16px) 20px;
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
@@ -338,7 +340,10 @@ export default {
 }
 .project-drawer__chevron--rotated { transform: rotate(180deg); }
 .project-drawer__body {
-  padding: 0 var(--spacing-lg, 24px) var(--spacing-lg, 24px);
+  /* padding-top rather than none: the header's own bottom padding alone left
+     the content sitting on the header, which reads as one block — especially
+     where the first thing below is a bordered box. */
+  padding: 4px 20px 20px;
 }
 .project-drawer__placeholder {
   text-align: center;
