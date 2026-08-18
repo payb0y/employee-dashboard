@@ -47,6 +47,23 @@ src/components/ProjectsMapWidget.vue   — Leaflet map of project locations
 src/components/ProjectDrawerWidget.vue — detail drawer (timeline/notes/activity tabs)
 ```
 
+**Two views.** `Dashboard.vue` switches between them on `activeView`
+(`'overview' | 'cards'`), chosen by tabs in `DashboardHeader.vue` and persisted
+to `localStorage` under `employee_dashboard.activeView`. The overview is the
+list above; the card view is a wall of fixed-height panels:
+
+```
+src/components/CardsView.vue            — the wall; owns every bucket computed
+src/components/cards/CardPanel.vue      — shared shell: fixed height, pinned
+                                          header, scrolling body
+src/components/cards/TasksPanel.vue     — used five times (overdue, today,
+                                          tomorrow, upcoming, no due date)
+src/components/cards/ProjectsPanel.vue  — my projects
+src/components/cards/EventsPanel.vue    — upcoming calendar events
+src/components/cards/MentionsPanel.vue  — unread Talk mentions
+src/components/cards/SignaturesPanel.vue— documents awaiting my signature
+```
+
 Gone: `WelcomeStrip.vue` and `ProjectFilterWidget.vue` were merged into
 `DashboardHeader.vue`; `ProjectsWorkspaceWidget.vue` and `ResourcesWidget.vue`
 no longer exist.
@@ -85,7 +102,11 @@ no longer exist.
   "timeline":      [{ "id", "projectId", "label", "itemType", "startDate", "endDate", "color" }],
   "activityEvents":[{ "id", "projectId", "eventType", "actorName", "occurredAt" }],
   "notes":         [{ "id", "projectId", "title", "content", "userId", "createdAt" }],
-  "resources":     { "files", "notes", "whiteboards" }
+  "resources":     { "files", "notes", "whiteboards" },
+  "upcomingEvents":[{ "uid", "title", "startsAt", "allDay", "color", "calendarId" }],
+  "projectLocations": { "<projectId>": { "lat", "lng", "displayName" } },
+  "unreadMentions":[{ "roomId", "token", "name", "messageId" }],
+  "pendingSignatures":[{ "id", "fileId", "uuid", "fileName", "requestedBy", "createdAt" }]
 }
 ```
 
@@ -339,3 +360,19 @@ The filter in `Dashboard.vue` uses `activeProjectId`. If a new widget needs proj
   and **production is deployed as `employee_dashboard`** — a mismatch fails
   `occ app:enable` with "appinfo file cannot be read"
 - Do not use `oc_deck_cards.owner` for employee scoping — use `oc_deck_assigned_users.participant`
+- Do not rely on the `#employee-dashboard-root` rules in `Dashboard.vue`. Vue 2
+  **replaces** the mount element, so that whole reset block — buttons,
+  headings, links, inputs, lists — has never applied to anything. A bare
+  `<button>` will be painted by Nextcloud core unless the component resets it
+  itself. Fixing the block properly means rescoping it to `.emp-dashboard`,
+  which would change the overview's appearance and has not been attempted
+- Do not put a database dump, archive or `.env` anywhere under this directory.
+  It is bind-mounted into the Nextcloud docroot and Apache serves every
+  non-PHP file in it as static content, unauthenticated. `.htaccess` now denies
+  dotfiles and data extensions, and `.gitignore` covers `*.sql`
+- Do not match LibreSign signers on the profile email. It is user-editable and
+  unverified, so it lets any employee claim another person's requests. Match
+  `oc_libresign_identify_method.identifier_key = 'account'` only
+- Do not link to `libresign_file.uuid`. The signing route
+  `/apps/libresign/p/sign/{uuid}` resolves the per-signer
+  `libresign_sign_request.uuid`
