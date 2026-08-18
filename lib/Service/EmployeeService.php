@@ -117,21 +117,50 @@ class EmployeeService {
         return $stmt->fetchAll();
     }
 
+    /**
+     * Projects this employee belongs to.
+     *
+     * Two independent routes, unioned:
+     *
+     *  1. Project membership — the employee is in the project's Nextcloud
+     *     group (custom_projects.project_group_gid), which is the same group
+     *     the project's deck board ACL and group folder are granted to. This
+     *     is how the rest of the system records "who is on this project".
+     *
+     *  2. Card assignment — a card assigned to the employee sits on a board
+     *     belonging to this project. Kept so an assignment on a project whose
+     *     group the employee is not in still surfaces the project.
+     *
+     * Route 1 was added after a project the employee was demonstrably a member
+     * of rendered nothing: every widget in both views derived from card
+     * assignments alone, so a member with no assigned card saw an empty
+     * dashboard — no project, no timeline, no gantt, no map. Membership and
+     * task assignment are different questions and are now asked separately.
+     * Tasks remain assigned-cards-only; this method only widens *projects*.
+     */
     private function fetchUserProjects(string $uid): array {
         $sql = "SELECT DISTINCT p.id, p.name, p.number, p.description,
                        p.board_id, p.status, p.organization_id,
                        p.folder_id, p.folder_path, p.white_board_id,
                        p.client_name, p.created_at,
                        p.loc_street, p.loc_city, p.loc_zip
-                FROM *PREFIX*deck_assigned_users au
-                JOIN *PREFIX*deck_cards c ON c.id = au.card_id
-                JOIN *PREFIX*deck_stacks s ON s.id = c.stack_id
-                JOIN *PREFIX*custom_projects p ON {$this->castInt('p.board_id')} = s.board_id
-                WHERE au.participant = ?
-                  AND c.deleted_at = 0
-                  AND s.deleted_at = 0";
+                FROM *PREFIX*custom_projects p
+                WHERE p.project_group_gid IN (
+                        SELECT gu.gid
+                        FROM *PREFIX*group_user gu
+                        WHERE gu.uid = ?
+                      )
+                   OR {$this->castInt('p.board_id')} IN (
+                        SELECT s.board_id
+                        FROM *PREFIX*deck_assigned_users au
+                        JOIN *PREFIX*deck_cards c ON c.id = au.card_id
+                        JOIN *PREFIX*deck_stacks s ON s.id = c.stack_id
+                        WHERE au.participant = ?
+                          AND c.deleted_at = 0
+                          AND s.deleted_at = 0
+                      )";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$uid]);
+        $stmt->execute([$uid, $uid]);
         return $stmt->fetchAll();
     }
 
