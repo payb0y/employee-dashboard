@@ -34,6 +34,8 @@
         @select="$emit('select-task', $event)"
       />
       <EventsPanel :events="events" />
+      <MentionsPanel :mentions="mentions" />
+      <SignaturesPanel :signatures="signatures" />
     </div>
   </div>
 </template>
@@ -42,6 +44,8 @@
 import TasksPanel from "./cards/TasksPanel.vue";
 import ProjectsPanel from "./cards/ProjectsPanel.vue";
 import EventsPanel from "./cards/EventsPanel.vue";
+import MentionsPanel from "./cards/MentionsPanel.vue";
+import SignaturesPanel from "./cards/SignaturesPanel.vue";
 
 function dayBounds(offsetDays) {
   var start = new Date();
@@ -53,7 +57,7 @@ function dayBounds(offsetDays) {
 
 export default {
   name: "CardsView",
-  components: { TasksPanel, ProjectsPanel, EventsPanel },
+  components: { TasksPanel, ProjectsPanel, EventsPanel, MentionsPanel, SignaturesPanel },
   props: {
     tasks: { type: Array, default: function () { return []; } },
     projects: { type: Array, default: function () { return []; } },
