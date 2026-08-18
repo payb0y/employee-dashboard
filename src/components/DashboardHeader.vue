@@ -36,6 +36,21 @@
             @click="$emit('filter', 'All Open')"
           >{{ workload.open }} open</span>
         </div>
+
+        <!-- View switcher. Lives in the identity tier, which never collapses,
+             so it stays reachable however far the page is scrolled. -->
+        <div class="iz-tabs dash-header__views">
+          <button
+            class="iz-tab"
+            :class="{ 'iz-tab--active': activeView === 'overview' }"
+            @click="$emit('switch-view', 'overview')"
+          >Overview</button>
+          <button
+            class="iz-tab"
+            :class="{ 'iz-tab--active': activeView === 'cards' }"
+            @click="$emit('switch-view', 'cards')"
+          >Cards</button>
+        </div>
       </div>
 
       <!-- The filter row is the only thing that folds. grid-template-rows
@@ -143,6 +158,7 @@ export default {
     organization: { type: Object, default: null },
     focusNow: { type: Object, default: function () { return { overdue: 0, dueToday: 0 }; } },
     workload: { type: Object, default: function () { return { open: 0 }; } },
+    activeView: { type: String, default: "overview" },
   },
   data: function () {
     return {
@@ -333,6 +349,13 @@ export default {
 .dash-header--fixed {
   border-radius: 0 0 var(--radius-card) var(--radius-card);
   box-shadow: var(--shadow-card-hover);
+}
+
+/* Bar, tab, active underline and hover all come from .iz-tabs / .iz-tab —
+   only the placement belongs here. */
+.dash-header__views {
+  flex-basis: 100%;
+  margin-top: 8px;
 }
 
 /* ── Tier 1: identity + counts ── */

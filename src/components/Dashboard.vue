@@ -34,35 +34,50 @@
         :active-project-id="activeProjectId"
         @filter="onFocusFilter"
         @filter-project="onProjectFilter"
+        :active-view="activeView"
+        @switch-view="onSwitchView"
       />
 
-      <!-- 2.5 Map of all (or filtered) project locations -->
-      <ProjectsMapWidget
-        :projects="mapProjects"
-        :active-project-id="activeProjectId"
+      <template v-if="activeView === 'overview'">
+        <!-- 2.5 Map of all (or filtered) project locations -->
+        <ProjectsMapWidget
+          :projects="mapProjects"
+          :active-project-id="activeProjectId"
+          @filter-project="onProjectFilter"
+        />
+
+        <!-- 3. Primary Focus Area -->
+        <section class="emp-dashboard__focus-row">
+          <FocusNowWidget :focus="derivedFocusNow" :events="data.upcomingEvents || []" @filter="onFocusFilter" @select-task="onSelectTask" />
+          <div class="emp-dashboard__focus-side">
+            <WorkloadWidget :workload="derivedWorkload" @filter="onFocusFilter" />
+            <ScheduleWidget :schedule="derivedSchedule" @filter="onFocusFilter" />
+          </div>
+        </section>
+
+        <!-- A. My Week Panel -->
+        <MyWeekWidget :tasks="filteredTasks" @select-task="onSelectTask" @filter-project="onProjectFilter" />
+
+        <!-- B. My Tasks Board -->
+        <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" @filter-project="onProjectFilter" />
+
+        <!-- B2. Gantt Chart -->
+        <GanttWidget v-if="activeProjectId === null" :timeline="filteredTimeline" :projects="filteredProjects" />
+
+        <!-- D. Project Context Drawer -->
+        <ProjectDrawerWidget :project="selectedProject" :timeline="data.timeline" :activity-events="data.activityEvents || []" :notes="data.notes || []" />
+      </template>
+
+      <CardsView
+        v-else
+        :tasks="filteredTasks"
+        :projects="filteredProjects"
+        :events="data.upcomingEvents || []"
+        :mentions="data.unreadMentions || []"
+        :signatures="data.pendingSignatures || []"
+        @select-task="onSelectTask"
         @filter-project="onProjectFilter"
       />
-
-      <!-- 3. Primary Focus Area -->
-      <section class="emp-dashboard__focus-row">
-        <FocusNowWidget :focus="derivedFocusNow" :events="data.upcomingEvents || []" @filter="onFocusFilter" @select-task="onSelectTask" />
-        <div class="emp-dashboard__focus-side">
-          <WorkloadWidget :workload="derivedWorkload" @filter="onFocusFilter" />
-          <ScheduleWidget :schedule="derivedSchedule" @filter="onFocusFilter" />
-        </div>
-      </section>
-
-      <!-- A. My Week Panel -->
-      <MyWeekWidget :tasks="filteredTasks" @select-task="onSelectTask" @filter-project="onProjectFilter" />
-
-      <!-- B. My Tasks Board -->
-      <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" @filter-project="onProjectFilter" />
-
-      <!-- B2. Gantt Chart -->
-      <GanttWidget v-if="activeProjectId === null" :timeline="filteredTimeline" :projects="filteredProjects" />
-
-      <!-- D. Project Context Drawer -->
-      <ProjectDrawerWidget :project="selectedProject" :timeline="data.timeline" :activity-events="data.activityEvents || []" :notes="data.notes || []" />
     </template>
   </div>
 </template>
@@ -77,6 +92,7 @@ import GanttWidget from "./GanttWidget.vue";
 import DashboardHeader from "./DashboardHeader.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
 import ProjectsMapWidget from "./ProjectsMapWidget.vue";
+import CardsView from "./CardsView.vue";
 
 export default {
   name: "Dashboard",
@@ -90,6 +106,7 @@ export default {
     DashboardHeader,
     ProjectDrawerWidget,
     ProjectsMapWidget,
+    CardsView,
   },
   props: {
     data: { type: Object, required: true },
@@ -99,6 +116,7 @@ export default {
       focusFilter: null,
       selectedProject: null,
       activeProjectId: null,
+      activeView: "overview",
     };
   },
   computed: {
@@ -190,7 +208,25 @@ export default {
       return { dueToday: dueToday, dueThisWeek: dueThisWeek, noDueDate: noDueDate, nextMilestone: nextMilestone };
     },
   },
+  mounted: function () {
+    try {
+      var saved = window.localStorage.getItem("employee_dashboard.activeView");
+      if (saved === "cards" || saved === "overview") {
+        this.activeView = saved;
+      }
+    } catch (e) {
+      // Private browsing or a blocked store — the default is fine.
+    }
+  },
   methods: {
+    onSwitchView: function (view) {
+      this.activeView = view;
+      try {
+        window.localStorage.setItem("employee_dashboard.activeView", view);
+      } catch (e) {
+        // Not being able to remember the choice is not worth failing over.
+      }
+    },
     onFocusFilter: function (tab) {
       var self = this;
       this.focusFilter = { tab: tab, ts: Date.now() };
