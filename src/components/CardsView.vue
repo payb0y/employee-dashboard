@@ -1,20 +1,97 @@
 <template>
   <div class="cards-view">
     <div class="cards-view__grid">
-      <!-- panels arrive in tasks 4-6 -->
+      <TasksPanel
+        title="Overdue"
+        :tasks="overdue"
+        empty="Nothing overdue. You're clear."
+        @select="$emit('select-task', $event)"
+      />
+      <TasksPanel
+        title="Due today"
+        :tasks="dueToday"
+        empty="Nothing due today"
+        @select="$emit('select-task', $event)"
+      />
+      <TasksPanel
+        title="Due tomorrow"
+        :tasks="dueTomorrow"
+        empty="Nothing due tomorrow"
+        @select="$emit('select-task', $event)"
+      />
+      <TasksPanel
+        title="Upcoming"
+        :tasks="upcoming"
+        ranges
+        empty="Nothing scheduled"
+        @select="$emit('select-task', $event)"
+      />
+      <TasksPanel
+        title="No due date"
+        :tasks="noDueDate"
+        empty="Every card has a date"
+        @select="$emit('select-task', $event)"
+      />
     </div>
   </div>
 </template>
 
 <script>
+import TasksPanel from "./cards/TasksPanel.vue";
+
+function dayBounds(offsetDays) {
+  var start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() + offsetDays);
+  var end = new Date(start.getTime() + 86400000 - 1);
+  return { start: start, end: end };
+}
+
 export default {
   name: "CardsView",
+  components: { TasksPanel },
   props: {
     tasks: { type: Array, default: function () { return []; } },
     projects: { type: Array, default: function () { return []; } },
     events: { type: Array, default: function () { return []; } },
     mentions: { type: Array, default: function () { return []; } },
     signatures: { type: Array, default: function () { return []; } },
+  },
+  computed: {
+    openTasks: function () {
+      return this.tasks.filter(function (t) { return !t.done; });
+    },
+    overdue: function () {
+      var today = dayBounds(0);
+      return this.openTasks.filter(function (t) {
+        return t.duedate && new Date(t.duedate) < today.start;
+      });
+    },
+    dueToday: function () {
+      var today = dayBounds(0);
+      return this.openTasks.filter(function (t) {
+        if (!t.duedate) return false;
+        var d = new Date(t.duedate);
+        return d >= today.start && d <= today.end;
+      });
+    },
+    dueTomorrow: function () {
+      var tomorrow = dayBounds(1);
+      return this.openTasks.filter(function (t) {
+        if (!t.duedate) return false;
+        var d = new Date(t.duedate);
+        return d >= tomorrow.start && d <= tomorrow.end;
+      });
+    },
+    upcoming: function () {
+      var tomorrow = dayBounds(1);
+      return this.openTasks.filter(function (t) {
+        return t.duedate && new Date(t.duedate) >= tomorrow.start;
+      });
+    },
+    noDueDate: function () {
+      return this.openTasks.filter(function (t) { return !t.duedate; });
+    },
   },
 };
 </script>

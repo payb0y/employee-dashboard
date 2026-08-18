@@ -243,6 +243,10 @@ export default {
       if (!task) return;
       var tab = task.done ? "Done" : "All Open";
       this.focusFilter = { tab: tab, taskId: taskId, ts: Date.now() };
+      // The tasks board only exists in the overview, so a card-view click has
+      // to bring that view back first — otherwise the scroll below finds no
+      // ref and the click does nothing at all.
+      this.activeView = "overview";
       this.$nextTick(function () {
         var el = self.$refs.tasksBoard;
         if (el && el.$el) {
