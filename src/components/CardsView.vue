@@ -1,6 +1,7 @@
 <template>
   <div class="cards-view">
     <div class="cards-view__grid">
+      <ProjectsPanel :projects="projects" @select="$emit('filter-project', $event)" />
       <TasksPanel
         title="Overdue"
         :tasks="overdue"
@@ -32,12 +33,15 @@
         empty="Every card has a date"
         @select="$emit('select-task', $event)"
       />
+      <EventsPanel :events="events" />
     </div>
   </div>
 </template>
 
 <script>
 import TasksPanel from "./cards/TasksPanel.vue";
+import ProjectsPanel from "./cards/ProjectsPanel.vue";
+import EventsPanel from "./cards/EventsPanel.vue";
 
 function dayBounds(offsetDays) {
   var start = new Date();
@@ -49,7 +53,7 @@ function dayBounds(offsetDays) {
 
 export default {
   name: "CardsView",
-  components: { TasksPanel },
+  components: { TasksPanel, ProjectsPanel, EventsPanel },
   props: {
     tasks: { type: Array, default: function () { return []; } },
     projects: { type: Array, default: function () { return []; } },
