@@ -53,8 +53,10 @@ class EmployeeService {
 
         $projectLocations = $this->fetchProjectLocations($projects);
 
+        $profile = $this->getEmployeeProfile($uid, $orgId);
+
         return [
-            'employee'     => $this->getEmployeeProfile($uid, $orgId),
+            'employee'     => $profile,
             'organization' => $this->getOrganization($orgId),
             'focusNow'     => $focusNow,
             'workload'     => $this->computeWorkload($cards, $projects),
@@ -66,6 +68,7 @@ class EmployeeService {
             'activityEvents'  => $this->fetchActivityEvents($projectIds),
             'notes'           => $this->fetchNotes($projectIds),
             'unreadMentions'  => $this->fetchUnreadMentions($uid),
+            'pendingSignatures' => $this->fetchPendingSignatures($uid, (string)$profile['email']),
             'upcomingEvents'  => $upcoming['events'],
             'projectLocations' => $projectLocations,
         ];
@@ -639,6 +642,63 @@ class EmployeeService {
                 'token'     => (string)$row['token'],
                 'name'      => (string)$row['name'],
                 'messageId' => (int)$row['last_mention_message'],
+            ];
+        }
+        return $items;
+    }
+
+    // ── Pending signatures ───────────────────────────────────────────
+
+    /**
+     * LibreSign requests addressed to this employee and not yet signed.
+     *
+     * Matches on uid OR email because LibreSign identifies signers either way
+     * — the live data contains both forms. When $email is empty the email
+     * clause is omitted entirely rather than bound as '': an empty bind would
+     * match any row whose identifier_value is also empty, exposing another
+     * user's documents.
+     *
+     * Note sign_request.display_name is the SIGNER, not the sender. The
+     * requester is libresign_file.user_id.
+     */
+    private function fetchPendingSignatures(string $uid, string $email): array {
+        $match  = "(im.identifier_key = 'account' AND im.identifier_value = ?)";
+        $params = [$uid];
+
+        if ($email !== '') {
+            $match   .= " OR (im.identifier_key = 'email' AND im.identifier_value = ?)";
+            $params[] = $email;
+        }
+
+        $sql = "SELECT sr.id, sr.file_id, sr.created_at,
+                       f.uuid, f.name AS file_name, f.user_id AS requested_by
+                FROM *PREFIX*libresign_sign_request sr
+                JOIN *PREFIX*libresign_file f ON f.id = sr.file_id
+                JOIN *PREFIX*libresign_identify_method im ON im.sign_request_id = sr.id
+                WHERE sr.signed IS NULL
+                  AND ({$match})
+                ORDER BY sr.created_at DESC";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+        } catch (\Throwable $e) {
+            $this->logger->debug('LibreSign requests unavailable', [
+                'app'       => 'employee_dashboard',
+                'exception' => $e,
+            ]);
+            return [];
+        }
+
+        $items = [];
+        while ($row = $stmt->fetch()) {
+            $items[] = [
+                'id'          => (int)$row['id'],
+                'fileId'      => (int)$row['file_id'],
+                'uuid'        => (string)$row['uuid'],
+                'fileName'    => (string)$row['file_name'],
+                'requestedBy' => (string)$row['requested_by'],
+                'createdAt'   => $row['created_at'],
             ];
         }
         return $items;
