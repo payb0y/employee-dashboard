@@ -230,6 +230,10 @@ export default {
     onFocusFilter: function (tab) {
       var self = this;
       this.focusFilter = { tab: tab, ts: Date.now() };
+      // Same reason as onSelectTask: the tasks board these filters drive is an
+      // overview widget, so from the card view the header's count badges would
+      // otherwise be dead controls.
+      this.activeView = "overview";
       this.$nextTick(function () {
         var el = self.$refs.tasksBoard;
         if (el && el.$el) {

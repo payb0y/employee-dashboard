@@ -91,10 +91,13 @@ export default {
         return d >= tomorrow.start && d <= tomorrow.end;
       });
     },
+    // Strictly after tomorrow: the five buckets must be disjoint, or a card
+    // due tomorrow is listed by both "Due tomorrow" and "Upcoming" and the
+    // totals no longer add up to the employee's open work.
     upcoming: function () {
       var tomorrow = dayBounds(1);
       return this.openTasks.filter(function (t) {
-        return t.duedate && new Date(t.duedate) >= tomorrow.start;
+        return t.duedate && new Date(t.duedate) > tomorrow.end;
       });
     },
     noDueDate: function () {

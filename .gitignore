@@ -1,3 +1,8 @@
 /node_modules
 *.md
 *.png
+# Database dumps must never sit in a web-served app directory, and must
+# never be committed — they carry password hashes, auth tokens and secrets.
+*.sql
+*.sql.gz
+*.dump

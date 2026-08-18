@@ -1,0 +1,9 @@
+# The app directory is bind-mounted into the Nextcloud docroot, so Apache
+# serves every non-PHP file in it as static content. Nothing here should be
+# fetchable directly: deny dotfiles (.git in particular, which otherwise
+# hands out the full repository) and any data file that lands here by
+# accident. Nextcloud only ever needs js/, css/ and img/.
+RedirectMatch 404 /\.(?!well-known)
+<FilesMatch "\.(sql|dump|bak|log|env|key|pem|sqlite|db)$">
+  Require all denied
+</FilesMatch>

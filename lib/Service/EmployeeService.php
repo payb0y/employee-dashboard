@@ -673,12 +673,21 @@ class EmployeeService {
      * requester is libresign_file.user_id.
      */
     private function fetchPendingSignatures(string $uid): array {
-        $sql = "SELECT sr.id, sr.file_id, sr.created_at,
-                       f.uuid, f.name AS file_name, f.user_id AS requested_by
+        // sr.uuid, NOT f.uuid: /apps/libresign/p/sign/{uuid} resolves the
+        // per-signer sign_request, so the file uuid produces LibreSign's
+        // "Invalid UUID" page for every row.
+        //
+        // f.status filters the document's lifecycle: 0 draft (never sent),
+        // 1 able to sign, 2 partially signed, 3 signed, 4 deleted. Only 1 and
+        // 2 are genuinely awaiting a signature; sr.signed IS NULL alone also
+        // matches drafts the sender never sent and requests on deleted files.
+        $sql = "SELECT sr.id, sr.file_id, sr.uuid, sr.created_at,
+                       f.name AS file_name, f.user_id AS requested_by
                 FROM *PREFIX*libresign_sign_request sr
                 JOIN *PREFIX*libresign_file f ON f.id = sr.file_id
                 JOIN *PREFIX*libresign_identify_method im ON im.sign_request_id = sr.id
                 WHERE sr.signed IS NULL
+                  AND f.status IN (1, 2)
                   AND im.identifier_key = 'account'
                   AND im.identifier_value = ?
                 ORDER BY sr.created_at DESC";

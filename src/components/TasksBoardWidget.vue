@@ -204,7 +204,12 @@ export default {
     };
   },
   watch: {
-    focusFilter: function (val) {
+    // immediate: the card view mounts this widget *after* focusFilter is
+    // already set, so a plain watcher never fires and the click lands on
+    // page 1 with nothing selected.
+    focusFilter: {
+      immediate: true,
+      handler: function (val) {
       if (val && val.tab) {
         this.activeTab = val.tab;
         this.currentPage = 1;
@@ -225,6 +230,7 @@ export default {
           });
         }
       }
+      },
     },
   },
   computed: {

@@ -45,6 +45,16 @@ export default {
 
 <style scoped>
 .projects-panel__row {
+  /* Nextcloud core styles every bare <button>. The app-wide reset in
+     Dashboard.vue is scoped to #employee-dashboard-root, which Vue 2 REPLACES
+     on mount — so that block has never applied to anything and cannot be
+     relied on here. Reset locally instead. */
+  appearance: none;
+  background: none;
+  border: 0;
+  min-height: 0;
+  font: inherit;
+  color: inherit;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
