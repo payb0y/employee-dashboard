@@ -68,7 +68,7 @@ class EmployeeService {
             'activityEvents'  => $this->fetchActivityEvents($projectIds),
             'notes'           => $this->fetchNotes($projectIds),
             'unreadMentions'  => $this->fetchUnreadMentions($uid),
-            'pendingSignatures' => $this->fetchPendingSignatures($uid, (string)$profile['email']),
+            'pendingSignatures' => $this->fetchPendingSignatures($uid),
             'upcomingEvents'  => $upcoming['events'],
             'projectLocations' => $projectLocations,
         ];
@@ -652,36 +652,40 @@ class EmployeeService {
     /**
      * LibreSign requests addressed to this employee and not yet signed.
      *
-     * Matches on uid OR email because LibreSign identifies signers either way
-     * — the live data contains both forms. When $email is empty the email
-     * clause is omitted entirely rather than bound as '': an empty bind would
-     * match any row whose identifier_value is also empty, exposing another
-     * user's documents.
+     * Matches on the ACCOUNT identifier only — deliberately never on email.
+     *
+     * An earlier version also matched `identifier_key = 'email'` against the
+     * profile email from oc_accounts. That is an authorization bypass: the
+     * profile email is user-editable and unverified (every row on the dev
+     * instance carries verified="0"), so any employee could set their own
+     * email to an external signer's address and receive that person's pending
+     * requests — including libresign_file.uuid, which IS the signing link
+     * (/apps/libresign/p/sign/{uuid}). Four such requests existed in the dev
+     * data at the time this was found.
+     *
+     * The cost is that a signer invited by email rather than by account does
+     * not see the request here. That is correct: this dashboard is for account
+     * holders, and an email-invited signer is reached through LibreSign's own
+     * emailed link. Re-adding email matching requires proving the address
+     * server-side, not trusting the profile.
      *
      * Note sign_request.display_name is the SIGNER, not the sender. The
      * requester is libresign_file.user_id.
      */
-    private function fetchPendingSignatures(string $uid, string $email): array {
-        $match  = "(im.identifier_key = 'account' AND im.identifier_value = ?)";
-        $params = [$uid];
-
-        if ($email !== '') {
-            $match   .= " OR (im.identifier_key = 'email' AND im.identifier_value = ?)";
-            $params[] = $email;
-        }
-
+    private function fetchPendingSignatures(string $uid): array {
         $sql = "SELECT sr.id, sr.file_id, sr.created_at,
                        f.uuid, f.name AS file_name, f.user_id AS requested_by
                 FROM *PREFIX*libresign_sign_request sr
                 JOIN *PREFIX*libresign_file f ON f.id = sr.file_id
                 JOIN *PREFIX*libresign_identify_method im ON im.sign_request_id = sr.id
                 WHERE sr.signed IS NULL
-                  AND ({$match})
+                  AND im.identifier_key = 'account'
+                  AND im.identifier_value = ?
                 ORDER BY sr.created_at DESC";
 
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
+            $stmt->execute([$uid]);
         } catch (\Throwable $e) {
             $this->logger->debug('LibreSign requests unavailable', [
                 'app'       => 'employee_dashboard',
