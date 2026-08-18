@@ -57,7 +57,7 @@ export default {
 .card-panel__controls {
   flex: none;
   display: flex;
-  gap: 4px;
+  gap: 3px;
   flex-wrap: wrap;
 }
 /* min-height: 0 is required — without it a flex child refuses to shrink
@@ -71,9 +71,12 @@ export default {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  /* Small: each row already pads itself, so a large gap here just wastes the
+     card's fixed height and cuts how many rows are readable at once. */
+  gap: 2px;
 }
 .card-panel__empty {
+  flex-shrink: 0;
   margin: auto 0;
   text-align: center;
 }

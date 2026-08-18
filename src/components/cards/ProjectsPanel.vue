@@ -45,6 +45,12 @@ export default {
 
 <style scoped>
 .projects-panel__row {
+  /* The panel body is a column flex container, so height is the MAIN axis
+     and these rows are shrinkable by default. Once the list overflows,
+     flex-shrink crushes every row toward zero — with min-height reset to
+     0 they collapse to their padding and the text spills over the row
+     below. The body scrolls; it must never compress its items. */
+  flex-shrink: 0;
   /* Nextcloud core styles every bare <button>. The app-wide reset in
      Dashboard.vue is scoped to #employee-dashboard-root, which Vue 2 REPLACES
      on mount — so that block has never applied to anything and cannot be

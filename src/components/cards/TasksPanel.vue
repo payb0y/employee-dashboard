@@ -23,11 +23,17 @@
       class="tasks-panel__row"
       @click="$emit('select', task.id)"
     >
-      <span class="tasks-panel__main">
-        <span class="tasks-panel__title">{{ task.title }}</span>
-        <span class="tasks-panel__sub">{{ task.projectName || task.stackTitle }}</span>
+      <!-- The flex row lives on this span, not on the button. A <button> does
+           not derive its height from flex children, so laying the row out on
+           the button collapsed it to its padding and the text spilled over
+           the row below. -->
+      <span class="tasks-panel__line">
+        <span class="tasks-panel__main">
+          <span class="tasks-panel__title">{{ task.title }}</span>
+          <span class="tasks-panel__sub">{{ task.projectName || task.stackTitle }}</span>
+        </span>
+        <span v-if="task.duedate" class="tasks-panel__due">{{ shortDate(task.duedate) }}</span>
       </span>
-      <span v-if="task.duedate" class="tasks-panel__due">{{ shortDate(task.duedate) }}</span>
     </button>
   </CardPanel>
 </template>
@@ -57,7 +63,7 @@ export default {
       rangeOptions: [
         { days: 7, label: "7d" },
         { days: 30, label: "30d" },
-        { days: 90, label: "3 mo" },
+        { days: 90, label: "90d" },
         { days: null, label: "All" },
       ],
     };
@@ -85,6 +91,12 @@ export default {
 
 <style scoped>
 .tasks-panel__row {
+  /* The panel body is a column flex container, so height is the MAIN axis
+     and these rows are shrinkable by default. Once the list overflows,
+     flex-shrink crushes every row toward zero — with min-height reset to
+     0 they collapse to their padding and the text spills over the row
+     below. The body scrolls; it must never compress its items. */
+  flex-shrink: 0;
   /* Nextcloud core styles every bare <button>. The app-wide reset in
      Dashboard.vue is scoped to #employee-dashboard-root, which Vue 2 REPLACES
      on mount — so that block has never applied to anything and cannot be
@@ -95,13 +107,18 @@ export default {
   min-height: 0;
   font: inherit;
   color: inherit;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+/* Layout lives here rather than on the button — see the template comment. */
+.tasks-panel__line {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  text-align: left;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
 }
 .tasks-panel__row:hover { background: var(--bg-subtle); }
 .tasks-panel__main {
@@ -113,6 +130,8 @@ export default {
 .tasks-panel__title {
   font-size: 12px;
   font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
   color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -120,6 +139,7 @@ export default {
 }
 .tasks-panel__sub {
   font-size: 11px;
+  line-height: 1.25;
   color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;

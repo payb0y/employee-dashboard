@@ -41,6 +41,12 @@ export default {
 
 <style scoped>
 .events-panel__row {
+  /* The panel body is a column flex container, so height is the MAIN axis
+     and these rows are shrinkable by default. Once the list overflows,
+     flex-shrink crushes every row toward zero — with min-height reset to
+     0 they collapse to their padding and the text spills over the row
+     below. The body scrolls; it must never compress its items. */
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
