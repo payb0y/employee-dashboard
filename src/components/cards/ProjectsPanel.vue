@@ -49,10 +49,8 @@ export default {
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
-  width: 100%;
   text-align: left;
   padding: 6px;
-  margin: 0 -6px;
   border-radius: var(--radius-sm);
   cursor: pointer;
 }

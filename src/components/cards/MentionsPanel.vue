@@ -42,7 +42,6 @@ export default {
   flex-direction: column;
   gap: 2px;
   padding: 6px;
-  margin: 0 -6px;
   border-radius: var(--radius-sm);
 }
 .mentions-panel__row:hover { background: var(--bg-subtle); }

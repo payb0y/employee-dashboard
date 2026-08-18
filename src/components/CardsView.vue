@@ -118,4 +118,22 @@ export default {
 .cards-view__grid > * {
   flex: 0 0 calc((100% - 4 * var(--spacing-md)) / 5);
 }
+
+/* Reuse the app's existing three breakpoints rather than adding a fourth.
+   The height release below 900px lives in CardPanel.vue. */
+@media (max-width: 900px) {
+  .cards-view__grid > * {
+    flex-basis: calc((100% - 2 * var(--spacing-md)) / 3);
+  }
+}
+@media (max-width: 700px) {
+  .cards-view__grid > * {
+    flex-basis: calc((100% - var(--spacing-md)) / 2);
+  }
+}
+@media (max-width: 600px) {
+  .cards-view__grid > * {
+    flex-basis: 100%;
+  }
+}
 </style>

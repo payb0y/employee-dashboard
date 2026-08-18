@@ -66,6 +66,9 @@ export default {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  /* overflow-y:auto forces the computed overflow-x to auto too, so any child
+     even a pixel too wide grows a horizontal scrollbar inside the card. */
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 8px;
