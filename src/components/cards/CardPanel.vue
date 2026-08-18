@@ -83,7 +83,11 @@ export default {
      each trap a scroll gesture, which is unpleasant on touch. */
   .card-panel {
     height: auto;
-    max-height: 340px;
+  }
+  /* The body must stop being a scroll container too. Leaving a max-height
+     here keeps exactly the nested-scroll trap the release exists to remove. */
+  .card-panel__body {
+    overflow-y: visible;
   }
 }
 </style>

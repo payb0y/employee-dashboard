@@ -47,11 +47,17 @@ import EventsPanel from "./cards/EventsPanel.vue";
 import MentionsPanel from "./cards/MentionsPanel.vue";
 import SignaturesPanel from "./cards/SignaturesPanel.vue";
 
+// Day boundaries in local time. The end is derived by advancing the calendar
+// date rather than adding 86400000ms: on a DST transition the day is 23 or 25
+// hours long, and the fixed-millisecond version puts the boundary an hour off,
+// which drops a card from every bucket or lands it in two.
 function dayBounds(offsetDays) {
   var start = new Date();
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() + offsetDays);
-  var end = new Date(start.getTime() + 86400000 - 1);
+  var end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  end.setMilliseconds(end.getMilliseconds() - 1);
   return { start: start, end: end };
 }
 
