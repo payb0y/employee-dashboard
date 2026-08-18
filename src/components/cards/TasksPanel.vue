@@ -48,19 +48,26 @@ export default {
   },
   data: function () {
     return {
-      activeRange: 7,
+      // Default to All. The chips narrow; they must never be the reason a
+      // task the employee owns is on screen nowhere. Cards due beyond the
+      // widest bounded chip (a project a quarter out is ordinary here) were
+      // invisible in every panel: not overdue, not today, not tomorrow, and
+      // filtered out of upcoming.
+      activeRange: null,
       rangeOptions: [
         { days: 7, label: "7d" },
         { days: 30, label: "30d" },
         { days: 90, label: "3 mo" },
+        { days: null, label: "All" },
       ],
     };
   },
   computed: {
     visible: function () {
-      if (!this.ranges) return this.tasks;
+      if (!this.ranges || this.activeRange === null) return this.tasks;
       var limit = new Date();
       limit.setDate(limit.getDate() + this.activeRange);
+      limit.setHours(23, 59, 59, 999);
       return this.tasks.filter(function (t) {
         return t.duedate && new Date(t.duedate) <= limit;
       });

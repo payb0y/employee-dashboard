@@ -181,7 +181,12 @@ export default {
       return {
         open: open, done: done,
         completionPct: total > 0 ? Math.round((done / total) * 100) : 0,
-        activeProjects: this.filteredProjects.filter(function (p) { return p.status === 0; }).length,
+        // Every project the employee is on, not only status 0. The backend's
+        // computeWorkload already counts all of them (despite the field name),
+        // and the header's project switcher shows all of them — counting only
+        // "Active" here rendered "Projects 0" next to a visible project chip
+        // whenever the employee's work sat on a completed project.
+        activeProjects: this.filteredProjects.length,
       };
     },
     derivedSchedule: function () {
