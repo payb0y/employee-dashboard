@@ -65,6 +65,7 @@ class EmployeeService {
             'resources'       => $this->computeResources($projects, $projectIds),
             'activityEvents'  => $this->fetchActivityEvents($projectIds),
             'notes'           => $this->fetchNotes($projectIds),
+            'unreadMentions'  => $this->fetchUnreadMentions($uid),
             'upcomingEvents'  => $upcoming['events'],
             'projectLocations' => $projectLocations,
         ];
@@ -591,6 +592,53 @@ class EmployeeService {
                 'eventType'   => $row['event_type'],
                 'payload'     => json_decode($row['payload_json'] ?? '{}', true),
                 'occurredAt'  => $row['occurred_at'],
+            ];
+        }
+        return $items;
+    }
+
+    // ── Talk mentions ────────────────────────────────────────────────
+
+    /**
+     * Rooms where this employee has an unread @-mention.
+     *
+     * Deliberately does NOT render each room's last message. Those are often
+     * system or share events stored as JSON ({"message":"call_ended",…}), and
+     * formatting them the way Talk does would mean carrying a copy of Talk's
+     * message formatter and re-checking it against every Talk release.
+     *
+     * No isEnabledForUser() guard: this instance runs with Talk, Deck and
+     * LibreSign uninstalled while their tables stay populated, and every
+     * existing query here already reads oc_deck_* under those conditions. The
+     * try/catch is the whole guard.
+     */
+    private function fetchUnreadMentions(string $uid): array {
+        $sql = "SELECT r.id, r.token, r.name, a.last_mention_message
+                FROM *PREFIX*talk_attendees a
+                JOIN *PREFIX*talk_rooms r ON r.id = a.room_id
+                WHERE a.actor_id = ?
+                  AND a.actor_type = 'users'
+                  AND a.last_mention_message > a.last_read_message
+                ORDER BY a.last_mention_message DESC";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$uid]);
+        } catch (\Throwable $e) {
+            $this->logger->debug('Talk mentions unavailable', [
+                'app'       => 'employee_dashboard',
+                'exception' => $e,
+            ]);
+            return [];
+        }
+
+        $items = [];
+        while ($row = $stmt->fetch()) {
+            $items[] = [
+                'roomId'    => (int)$row['id'],
+                'token'     => (string)$row['token'],
+                'name'      => (string)$row['name'],
+                'messageId' => (int)$row['last_mention_message'],
             ];
         }
         return $items;
