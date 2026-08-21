@@ -24,7 +24,7 @@
             <div class="gantt-chart__label-col"></div>
             <div class="gantt-chart__bar-col">
               <div class="gantt-chart__ticks">
-                <span v-for="(tick, i) in dateTicks" :key="i" class="gantt-chart__tick" :style="{ left: tick.pct + '%' }">
+                <span v-for="(tick, i) in dateTicks" :key="i" class="gantt-chart__tick" :class="{ 'gantt-chart__tick--last': i === dateTicks.length - 1 }" :style="{ left: tick.pct + '%' }">
                   {{ tick.label }}
                 </span>
               </div>
@@ -250,7 +250,6 @@ export default {
   flex: 1;
   position: relative;
   min-width: 300px;
-  height: 100%;
 }
 
 /* Ticks */
@@ -266,6 +265,12 @@ export default {
   font-size: 10px;
   color: var(--color-text-muted, #9ca3af);
   white-space: nowrap;
+}
+/* The last tick sits on the 100% mark, so centring it puts half the label
+   outside the chart, where .gantt-chart's overflow cuts it off. Anchor that
+   one to its own right edge instead. */
+.gantt-chart__tick--last {
+  transform: translateX(-100%);
 }
 
 /* Today — full-height line */
@@ -310,6 +315,12 @@ export default {
 
 /* Row */
 .gantt-chart__row {
+  /* Overrides the align-items:center shared with the axis and group headers.
+     Centring makes .gantt-chart__bar-col — whose children are all absolutely
+     positioned, so its content height is 0 — collapse to a zero-height box at
+     the row's midpoint, and every bar then hangs off that into the row below.
+     The label column centres its own contents, so stretching costs nothing. */
+  align-items: stretch;
   min-height: 32px;
   padding: 2px 0;
 }
@@ -339,7 +350,8 @@ export default {
 /* Phase bar */
 .gantt-chart__bar {
   position: absolute;
-  top: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   height: 22px;
   border-radius: 6px;
   min-width: 4px;
@@ -362,7 +374,8 @@ export default {
 /* Milestone */
 .gantt-chart__milestone {
   position: absolute;
-  top: 6px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 @media (max-width: 600px) {
