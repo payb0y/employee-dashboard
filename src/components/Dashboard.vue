@@ -172,7 +172,18 @@ export default {
         }
         if (t.id < oldestId) { oldestId = t.id; oldestTask = { id: t.id, title: t.title }; }
       });
-      return { overdue: overdue, dueToday: dueToday, nextTask: nextTask, oldestTask: oldestTask };
+      return {
+        overdue: overdue,
+        dueToday: dueToday,
+        nextTask: nextTask,
+        oldestTask: oldestTask,
+        // Carried straight through from the API rather than re-derived: it
+        // counts calendar events left today, not tasks, and events carry no
+        // project so activeProjectId must not narrow it. FocusNowWidget reads
+        // it off this object, so dropping it here left it undefined and the
+        // widget printed "No more events today" above the day's events.
+        remainingToday: (this.data.focusNow && this.data.focusNow.remainingToday) || 0,
+      };
     },
     derivedWorkload: function () {
       var open = 0, done = 0;
