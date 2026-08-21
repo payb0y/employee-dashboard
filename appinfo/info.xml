@@ -5,7 +5,7 @@
     <name>Employee Dashboard</name>
     <summary>Personal task and project workspace for employees</summary>
     <description><![CDATA[An employee-facing dashboard showing assigned tasks, projects, milestones, and resources scoped to the logged-in user.]]></description>
-    <version>0.5.1</version>
+    <version>0.5.2</version>
     <licence>agpl</licence>
     <author mail="admin@example.com">Employee Dashboard Developer</author>
     <namespace>EmployeeDashboard</namespace>
@@ -15,11 +15,5 @@
         <nextcloud min-version="28" max-version="34"/>
     </dependencies>
     <navigations>
-        <navigation>
-            <name>My Dashboard</name>
-            <route>employee_dashboard.page.index</route>
-            <icon>app.svg</icon>
-            <order>11</order>
-        </navigation>
     </navigations>
 </info>
