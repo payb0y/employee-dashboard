@@ -83,6 +83,39 @@
               <option value="open">Has Open Tasks</option>
               <option value="done">Has Done Tasks</option>
             </select>
+
+            <!-- Completion bands. Same quartiles as adminpage's
+                 ProjectPerformancePanel, but the rate is MY completion in the
+                 project, and each band carries how many projects it holds — the
+                 strip scrolls, so its far end is often out of sight. -->
+            <div class="dash-header__bands" role="group" aria-label="Completion rate">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+              <button
+                v-for="b in completionBands"
+                :key="b.key"
+                type="button"
+                class="iz-chip"
+                :class="[b.tone, { 'iz-chip--active': tabCompletionFilter === b.key }]"
+                :disabled="b.key !== '' && b.count === 0"
+                :aria-pressed="tabCompletionFilter === b.key ? 'true' : 'false'"
+                :title="b.title"
+                @click="tabCompletionFilter = b.key"
+              >{{ b.label }} <span class="dash-header__band-n">{{ b.count }}</span></button>
+            </div>
+
             <button
               v-if="hasActiveFilters"
               class="iz-btn iz-btn--sm dash-header__clear"
@@ -109,6 +142,13 @@
             ></span>
             <span class="dash-header__tab-name">{{ p.name }}</span>
             <span v-if="p.number" class="dash-header__tab-num">{{ p.number }}</span>
+            <span
+              class="dash-header__tab-pct"
+              :class="'dash-header__tab-pct--' + bandOf(p)"
+              :title="p.progressPct === null
+                ? 'No tasks assigned to you here'
+                : p.doneCount + ' of ' + p.taskCount + ' of your tasks done'"
+            >{{ p.progressPct === null ? "—" : p.progressPct + "%" }}</span>
           </button>
           <span v-if="visibleProjects.length === 0" class="dash-header__strip-empty">
             No projects match filters
@@ -168,6 +208,7 @@ export default {
       tabStatusFilter: "",
       tabTaskDueFilter: "",
       tabTaskStatusFilter: "",
+      tabCompletionFilter: "",
     };
   },
   computed: {
@@ -198,6 +239,8 @@ export default {
 
       return this.projects.map(function (p) {
         var projectTasks = tasks.filter(function (t) { return t.projectId === p.id; });
+        var doneCount = 0;
+        projectTasks.forEach(function (t) { if (t.done) doneCount++; });
         var enrichedTasks = projectTasks.map(function (t) {
           var status = t.done ? "done" : "open";
           var dueBucket = "nodue";
@@ -213,13 +256,27 @@ export default {
         return Object.assign({}, p, {
           statusLabel: statusMap[p.status] || "Active",
           tasks: enrichedTasks,
+          taskCount: projectTasks.length,
+          doneCount: doneCount,
+          // null, not 0. No tasks assigned to me here means there is no
+          // completion rate — not a rate of zero, which would drop the project
+          // into the 0–25% band and read as "nothing done".
+          progressPct: projectTasks.length
+            ? Math.round((doneCount / projectTasks.length) * 100)
+            : null,
         });
       });
     },
     hasActiveFilters: function () {
-      return !!(this.tabSearch || this.tabStatusFilter || this.tabTaskDueFilter || this.tabTaskStatusFilter);
+      return !!(this.tabSearch || this.tabStatusFilter || this.tabTaskDueFilter ||
+        this.tabTaskStatusFilter || this.tabCompletionFilter);
     },
-    visibleProjects: function () {
+    /**
+     * Every filter EXCEPT the completion band. The band chips count off this
+     * list, so their numbers describe what is currently in view and do not
+     * shift as you move between bands.
+     */
+    projectsPreBand: function () {
       var self = this;
       var list = this.enrichedProjects;
       if (this.tabStatusFilter) {
@@ -257,6 +314,28 @@ export default {
         });
       }
       return list;
+    },
+    completionBands: function () {
+      var self = this;
+      var defs = [
+        { key: "", label: "All", tone: "", title: "All projects" },
+        { key: "0-25", label: "0\u201325%", tone: "iz-chip--danger", title: "0\u201325% of your tasks done" },
+        { key: "25-50", label: "25\u201350%", tone: "iz-chip--warning", title: "25\u201350% of your tasks done" },
+        { key: "50-75", label: "50\u201375%", tone: "iz-chip--accent", title: "50\u201375% of your tasks done" },
+        { key: "75-100", label: "75\u2013100%", tone: "iz-chip--success", title: "75\u2013100% of your tasks done" },
+      ];
+      var pre = this.projectsPreBand;
+      return defs.map(function (d) {
+        return Object.assign({}, d, {
+          count: pre.filter(function (p) { return self.inBand(p, d.key); }).length,
+        });
+      });
+    },
+    visibleProjects: function () {
+      var self = this;
+      return this.projectsPreBand.filter(function (p) {
+        return self.inBand(p, self.tabCompletionFilter);
+      });
     },
   },
   mounted: function () {
@@ -304,6 +383,29 @@ export default {
       this.tabStatusFilter = "";
       this.tabTaskDueFilter = "";
       this.tabTaskStatusFilter = "";
+      this.tabCompletionFilter = "";
+    },
+    /**
+     * Boundaries match adminpage's passesCompletionFilter exactly — [0,25]
+     * (25,50] (50,75] (75,100] — so the same range gives the same answer in
+     * both apps. A project with no tasks of mine matches no band.
+     */
+    inBand: function (p, band) {
+      if (!band) return true;
+      if (p.progressPct === null) return false;
+      var v = p.progressPct;
+      if (band === "0-25") return v >= 0 && v <= 25;
+      if (band === "25-50") return v > 25 && v <= 50;
+      if (band === "50-75") return v > 50 && v <= 75;
+      if (band === "75-100") return v > 75 && v <= 100;
+      return true;
+    },
+    bandOf: function (p) {
+      if (p.progressPct === null) return "none";
+      if (p.progressPct <= 25) return "danger";
+      if (p.progressPct <= 50) return "warning";
+      if (p.progressPct <= 75) return "accent";
+      return "success";
     },
   },
 };
@@ -455,6 +557,42 @@ export default {
   color: var(--color-badge-danger-text);
 }
 
+/* Chrome for the chips themselves is .iz-chip — including the tone tints,
+   which by design only appear once a chip is active, so an untouched row
+   stays quiet. Only the group's own box is local. */
+.dash-header__bands {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-el);
+  background: var(--bg-card);
+  transition: border-color 0.15s ease;
+}
+
+.dash-header__bands:hover {
+  border-color: var(--accent);
+}
+
+.dash-header__bands > svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin: 0 3px 0 2px;
+}
+
+.dash-header__bands .iz-chip[disabled] {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.dash-header__band-n {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.72;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Tier 2: the project switcher ── */
 .dash-header__projects {
   display: flex;
@@ -537,6 +675,26 @@ export default {
   font-size: 10px;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Without this the band filter is a black box: chips vanish and you take the
+   range on faith. With it the strip doubles as a completion overview. */
+.dash-header__tab-pct {
+  font-family: var(--iz-font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding-left: 6px;
+  border-left: 1px solid var(--color-border-dark);
+}
+
+.dash-header__tab-pct--danger { color: var(--color-badge-danger-text); }
+.dash-header__tab-pct--warning { color: var(--color-badge-warning-text); }
+.dash-header__tab-pct--accent { color: var(--accent-on-bg); }
+.dash-header__tab-pct--success { color: var(--color-badge-success-text); }
+.dash-header__tab-pct--none {
+  color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .dash-header__strip-empty {
