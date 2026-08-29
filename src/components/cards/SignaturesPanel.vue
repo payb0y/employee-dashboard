@@ -30,8 +30,11 @@ export default {
     signatures: { type: Array, default: function () { return []; } },
   },
   methods: {
+    // `signatures`, not `libresign`: this stack ships LibreSign rebranded, so
+    // the app id is signatures while the tables stay oc_libresign_*. The
+    // libresign route 404s on the running instance.
     signUrl: function (uuid) {
-      return generateUrl("/apps/libresign/p/sign/" + uuid);
+      return generateUrl("/apps/signatures/p/sign/" + uuid);
     },
     shortDate: function (value) {
       var d = new Date(value);
