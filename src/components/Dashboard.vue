@@ -55,6 +55,16 @@
           </div>
         </section>
 
+        <!-- 3.5 Waiting on you — Talk mentions and pending signatures.
+             Raw, not filtered: neither feed carries a projectId, so
+             activeProjectId has nothing to narrow, the same as upcomingEvents.
+             The widget renders nothing at all when both are empty. -->
+        <WaitingOnYouWidget
+          :mentions="data.unreadMentions || []"
+          :signatures="data.pendingSignatures || []"
+          @switch-view="onSwitchView"
+        />
+
         <!-- A. My Week Panel -->
         <MyWeekWidget :tasks="filteredTasks" @select-task="onSelectTask" @filter-project="onProjectFilter" />
 
@@ -92,6 +102,7 @@ import GanttWidget from "./GanttWidget.vue";
 import DashboardHeader from "./DashboardHeader.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
 import ProjectsMapWidget from "./ProjectsMapWidget.vue";
+import WaitingOnYouWidget from "./WaitingOnYouWidget.vue";
 import CardsView from "./CardsView.vue";
 
 export default {
@@ -106,6 +117,7 @@ export default {
     DashboardHeader,
     ProjectDrawerWidget,
     ProjectsMapWidget,
+    WaitingOnYouWidget,
     CardsView,
   },
   props: {
