@@ -46,11 +46,11 @@
             <line x1="8" y1="2" x2="8" y2="6" />
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
-          <span>Upcoming events</span>
+          <span>Upcoming meetings</span>
         </div>
 
         <div v-if="(focus.remainingToday || 0) === 0" class="focus-widget__events-empty">
-          No more events today
+          No more meetings today
         </div>
 
         <ul class="focus-widget__events-list">

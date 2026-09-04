@@ -895,8 +895,16 @@ class EmployeeService {
         }
     }
 
-    // ── Upcoming calendar events ─────────────────────────────────────
+    // ── Upcoming meetings ────────────────────────────────────────────
 
+    /**
+     * The user's next meetings, within a 7-day window.
+     *
+     * Nextcloud's auto-generated `contact_birthdays` calendar is excluded. Its
+     * rows are VEVENTs like any other, derived from address book BDAY fields,
+     * so a contact's birthday would otherwise sit in the list as a meeting —
+     * and, worse, be counted by remainingToday as something left to attend.
+     */
     private function fetchUpcomingEvents(string $uid): array {
         $tzName = $this->config->getUserValue($uid, 'core', 'timezone', '') ?: 'UTC';
         try {
@@ -916,6 +924,7 @@ class EmployeeService {
                 JOIN *PREFIX*calendarobjects co ON co.calendarid = cal.id
                 WHERE cal.principaluri = ?
                   AND cal.deleted_at IS NULL
+                  AND cal.uri <> 'contact_birthdays'
                   AND co.componenttype = 'VEVENT'
                   AND co.deleted_at IS NULL
                   AND co.lastoccurence >= ?
