@@ -69,6 +69,7 @@ class EmployeeService {
             'notes'           => $this->fetchNotes($projectIds),
             'unreadMentions'  => $this->fetchUnreadMentions($uid),
             'pendingSignatures' => $this->fetchPendingSignatures($uid),
+            'outgoingSignatures' => $this->fetchOutgoingSignatures($uid),
             'upcomingEvents'  => $upcoming['events'],
             'projectLocations' => $projectLocations,
         ];
@@ -744,6 +745,154 @@ class EmployeeService {
             ];
         }
         return $items;
+    }
+
+    // ── Outgoing signatures ──────────────────────────────────────────
+
+    /**
+     * Documents this employee SENT for signature and that are not finished.
+     *
+     * The mirror of fetchPendingSignatures(): there the employee is the
+     * signer, here they are libresign_file.user_id, which is the sender.
+     *
+     * That difference is also why this one may report signers identified by
+     * email, where the inbound query deliberately must not. Inbound matching
+     * on email is an authorization hole — the profile address is user-editable
+     * and unverified, so it hands an employee another person's signing links.
+     * Here the filter is the file's owner, which the server sets when the file
+     * is created, and the signers listed are the ones the sender named
+     * themselves. Nothing is revealed that the viewer did not type in.
+     *
+     * f.status: 0 draft (never sent), 1 able to sign, 2 partially signed,
+     * 3 signed, 4 deleted. Only 0-2 are unresolved and belong on a dashboard;
+     * a completed document is an outcome, not a task.
+     *
+     * The project name is joined through project_signing_requests, which only
+     * has a row for documents sent via projectcreatoraio — on the dev data
+     * that is 7 of 17. It is a label and never a filter: scoping this list by
+     * activeProjectId would hide every document sent straight from Signatures.
+     * Its libresign_file_id is varchar, hence castInt().
+     */
+    private function fetchOutgoingSignatures(string $uid): array {
+        $sql = "SELECT f.id, f.uuid, f.name, f.status, f.created_at,
+                       sr.id AS request_id, sr.display_name, sr.signed,
+                       sr.created_at AS requested_at, sr.signing_order,
+                       im.identifier_key,
+                       cp.name AS project_name
+                FROM *PREFIX*libresign_file f
+                LEFT JOIN *PREFIX*libresign_sign_request sr
+                       ON sr.file_id = f.id
+                LEFT JOIN *PREFIX*libresign_identify_method im
+                       ON im.sign_request_id = sr.id
+                LEFT JOIN *PREFIX*project_signing_requests psr
+                       ON {$this->castInt('psr.libresign_file_id')} = f.id
+                LEFT JOIN *PREFIX*custom_projects cp
+                       ON cp.id = psr.project_id
+                WHERE f.user_id = ?
+                  AND f.status IN (0, 1, 2)
+                ORDER BY f.created_at DESC, sr.signing_order ASC, sr.id ASC";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$uid]);
+        } catch (\Throwable $e) {
+            $this->logger->debug('LibreSign outgoing requests unavailable', [
+                'app'       => 'employee_dashboard',
+                'exception' => $e,
+            ]);
+            return [];
+        }
+
+        // Fold the flat rows into one entry per document. Signers are keyed by
+        // request id because both joins above can multiply rows — a request
+        // may carry more than one identify method, and a file may have more
+        // than one project_signing_requests row.
+        $docs = [];
+        while ($row = $stmt->fetch()) {
+            $id = (int)$row['id'];
+            if (!isset($docs[$id])) {
+                $docs[$id] = [
+                    'id'          => $id,
+                    'uuid'        => (string)$row['uuid'],
+                    'fileName'    => (string)$row['name'],
+                    'status'      => (int)$row['status'],
+                    'createdAt'   => $row['created_at'],
+                    'projectName' => $row['project_name'] !== null
+                        ? (string)$row['project_name']
+                        : null,
+                    'signers'     => [],
+                ];
+            }
+            if ($row['request_id'] === null) {
+                continue;   // a draft has no sign requests at all
+            }
+            $docs[$id]['signers'][(int)$row['request_id']] = [
+                'name'        => (string)$row['display_name'],
+                'via'         => (string)($row['identifier_key'] ?? ''),
+                'signed'      => $row['signed'],
+                'requestedAt' => $row['requested_at'],
+            ];
+        }
+
+        $today = new \DateTimeImmutable('today');
+        $items = [];
+        foreach ($docs as $doc) {
+            $doc['signers'] = array_values($doc['signers']);
+            $doc['signerCount'] = count($doc['signers']);
+
+            $signed = 0;
+            $oldestPending = null;
+            foreach ($doc['signers'] as $signer) {
+                if ($signer['signed'] !== null) {
+                    $signed++;
+                    continue;
+                }
+                // Measured from the oldest UNSIGNED request, not the file's own
+                // created_at: a document where two people signed last week and
+                // one has sat since August is stuck for a month, not a week.
+                $asked = $this->toDateOrNull($signer['requestedAt']);
+                if ($asked !== null && ($oldestPending === null || $asked < $oldestPending)) {
+                    $oldestPending = $asked;
+                }
+            }
+            $doc['signedCount'] = $signed;
+            $doc['daysWaiting'] = $oldestPending === null
+                ? null
+                : (int)$today->diff($oldestPending)->days;
+
+            $items[] = $doc;
+        }
+
+        // Longest wait first — the oldest is the one that went wrong. Drafts
+        // have no wait and sort last; the frontend groups them separately
+        // anyway, because there the blocker is the sender, not the signer.
+        usort($items, function ($a, $b) {
+            $aw = $a['daysWaiting'];
+            $bw = $b['daysWaiting'];
+            if ($aw === $bw) {
+                return 0;
+            }
+            if ($aw === null) {
+                return 1;
+            }
+            if ($bw === null) {
+                return -1;
+            }
+            return $bw <=> $aw;
+        });
+
+        return $items;
+    }
+
+    private function toDateOrNull(?string $value): ?\DateTimeImmutable {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        try {
+            return new \DateTimeImmutable(substr($value, 0, 10));
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     // ── Upcoming calendar events ─────────────────────────────────────

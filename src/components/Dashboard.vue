@@ -65,6 +65,14 @@
           @switch-view="onSwitchView"
         />
 
+        <!-- 3.6 Out for signature — the sending half. Raw for the same
+             reason as the panel above, and because most of these documents
+             carry no project at all. -->
+        <OutForSignatureWidget
+          :documents="data.outgoingSignatures || []"
+          @switch-view="onSwitchView"
+        />
+
         <!-- A. My Week Panel -->
         <MyWeekWidget :tasks="filteredTasks" @select-task="onSelectTask" @filter-project="onProjectFilter" />
 
@@ -103,6 +111,7 @@ import DashboardHeader from "./DashboardHeader.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
 import ProjectsMapWidget from "./ProjectsMapWidget.vue";
 import WaitingOnYouWidget from "./WaitingOnYouWidget.vue";
+import OutForSignatureWidget from "./OutForSignatureWidget.vue";
 import CardsView from "./CardsView.vue";
 
 export default {
@@ -118,6 +127,7 @@ export default {
     ProjectDrawerWidget,
     ProjectsMapWidget,
     WaitingOnYouWidget,
+    OutForSignatureWidget,
     CardsView,
   },
   props: {
