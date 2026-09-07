@@ -33,7 +33,12 @@ if (mountEl) {
           h("p", "Error loading data: " + this.error),
         ]);
       }
-      return h(Dashboard, { props: { data: this.dashboardData } });
+      return h(Dashboard, {
+        props: { data: this.dashboardData },
+        // Sending a document creates rows this view fetched before they
+        // existed, so the panel asks for the data again rather than lying.
+        on: { refresh: this.fetchData },
+      });
     },
     mounted() {
       this.fetchData();

@@ -15,16 +15,34 @@
       <span class="out-signature__title">Out for signature</span>
       <span v-if="total > 0" class="iz-badge iz-badge--cat-5 out-signature__count">{{ total }}</span>
       <span v-else class="out-signature__clear">Nothing awaiting a signature</span>
-      <!-- Hands off rather than composing: signer invitation, field placement
-           and identity checks are built already, in organization, in
-           projectcreatoraio and in the Signatures app's own screens. -->
-      <a class="iz-btn iz-btn--sm out-signature__send" :href="appUrl">
+      <!-- Composing happens here now, but the work behind it is still the
+           project app's: the modal uploads and then calls its signing endpoint
+           rather than repeating ProjectSigningService in this app. -->
+      <button
+        type="button"
+        class="iz-btn iz-btn--sm out-signature__send"
+        :disabled="sendableProjects.length === 0"
+        :title="sendableProjects.length === 0
+          ? 'None of your projects has a folder to upload into'
+          : 'Upload a PDF and send it for signature'"
+        @click="modalOpen = true"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
           <path d="M12 5v14M5 12h14" />
         </svg>
         Send a document
-      </a>
+      </button>
     </div>
+
+    <div v-if="sentNote" class="out-signature__sent">{{ sentNote }}</div>
+
+    <UploadForSigningModal
+      v-if="modalOpen"
+      :projects="projects"
+      :uid="uid"
+      @close="modalOpen = false"
+      @sent="onSent"
+    />
 
     <!-- Drafts first, and apart. A draft has no signers, so it cannot be
          waiting on anyone — the sender never sent it. Filed with the chased
@@ -105,17 +123,24 @@
 <script>
 import { generateUrl } from "@nextcloud/router";
 
+import UploadForSigningModal from "./UploadForSigningModal.vue";
+
 export default {
   name: "OutForSignatureWidget",
+  components: { UploadForSigningModal },
   props: {
     // Already sorted longest-wait-first by the service, drafts last, and never
     // narrowed by activeProjectId: most documents carry no project at all, so
     // scoping this list would empty it the moment a project is selected.
     documents: { type: Array, default: function () { return []; } },
+    // Destinations for a new document — the project app picks a folder out of
+    // its file tree; here the employee's own projects supply one.
+    projects: { type: Array, default: function () { return []; } },
+    uid: { type: String, default: "" },
   },
   data: function () {
     // A summary, not an inbox. Past this the Cards view holds the full list.
-    return { limit: 3 };
+    return { limit: 3, modalOpen: false, sentNote: "" };
   },
   computed: {
     total: function () {
@@ -133,11 +158,10 @@ export default {
     shownWaiting: function () {
       return this.waiting.slice(0, this.limit);
     },
-    // `signatures`, not `libresign`: this stack ships LibreSign rebranded, so
-    // the app id is signatures while its tables stay oc_libresign_*. Same
-    // literal as SignaturesPanel and adminpage's ProjectDetailsPanel.
-    appUrl: function () {
-      return generateUrl("/apps/signatures/");
+    sendableProjects: function () {
+      return this.projects.filter(function (p) {
+        return p.folderPath && String(p.folderPath).trim() !== "";
+      });
     },
     // The document list rather than a per-file deep link: the Signatures SPA
     // resolves its own sub-routes client-side and none was confirmed to work
@@ -153,6 +177,16 @@ export default {
       if (days >= 30) return "out-signature__age--bad";
       if (days >= 14) return "out-signature__age--warn";
       return "out-signature__age--fresh";
+    },
+    onSent: function (info) {
+      this.modalOpen = false;
+      this.sentNote =
+        "Sent " + info.count + " document" + (info.count === 1 ? "" : "s") +
+        " for signature in " + info.project + "." +
+        (info.failed.length ? " Failed: " + info.failed.join("; ") + "." : "");
+      // The dashboard fetches once on mount, so the new rows only exist after
+      // a refetch; without this the panel would keep claiming it is empty.
+      this.$emit("refresh");
     },
     signerTitle: function (signer) {
       var how = signer.via === "email" ? "by email" : "by account";
@@ -346,6 +380,15 @@ export default {
 .out-signature__age--draft {
   background: var(--accent-bg);
   color: var(--accent-on-bg);
+}
+
+.out-signature__sent {
+  font-size: 12px;
+  color: var(--color-badge-success-text);
+  background: var(--color-badge-success-bg);
+  border-radius: var(--radius-sm);
+  padding: 7px 9px;
+  margin-bottom: 10px;
 }
 
 .out-signature__more {

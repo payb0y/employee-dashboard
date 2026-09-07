@@ -70,7 +70,10 @@
              carry no project at all. -->
         <OutForSignatureWidget
           :documents="data.outgoingSignatures || []"
+          :projects="data.projects || []"
+          :uid="(data.employee && data.employee.uid) || ''"
           @switch-view="onSwitchView"
+          @refresh="$emit('refresh')"
         />
 
         <!-- A. My Week Panel -->
