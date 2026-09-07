@@ -49,6 +49,35 @@
           </select>
         </div>
 
+        <!-- Mirrors the project app: the section appears once there is a
+             signer, and the studio needs a PDF before it can show anything. -->
+        <div v-if="signers.length" class="upsign__place">
+          <div class="upsign__place-top">
+            <span class="upsign__place-head">
+              <span class="upsign__label">Signature placements</span>
+              <span class="upsign__hint">Placed {{ placedCount }} of {{ signers.length }} signers.</span>
+            </span>
+            <button
+              type="button"
+              class="iz-btn iz-btn--sm"
+              :disabled="busy || files.length === 0"
+              :title="files.length === 0 ? 'Choose a PDF first' : 'Place each signature on the page'"
+              @click="studioOpen = true"
+            >Open Placement Studio</button>
+          </div>
+          <div class="upsign__place-list">
+            <span v-for="s in signers" :key="s.signerKey" class="upsign__place-row">
+              <span class="upsign__place-name">{{ s.displayName }}</span>
+              <span
+                class="upsign__place-state"
+                :class="placements[s.signerKey] ? 'upsign__place-state--done' : ''"
+              >{{ placements[s.signerKey]
+                  ? "Placed (page " + placements[s.signerKey].page + ")"
+                  : "Not placed yet" }}</span>
+            </span>
+          </div>
+        </div>
+
         <div class="upsign__field">
           <span class="upsign__label">PDFs</span>
           <div class="upsign__filerow">
@@ -78,6 +107,16 @@
           </ul>
         </div>
 
+        <PlacementStudio
+          v-if="studioOpen"
+          v-model="placements"
+          :file="files[0] || null"
+          :file-name="files.length ? files[0].name : ''"
+          :signers="signers"
+          @close="studioOpen = false"
+          @done="studioOpen = false"
+        />
+
         <div v-if="progress" class="upsign__note">{{ progress }}</div>
         <div v-if="error" class="upsign__error">{{ error }}</div>
       </div>
@@ -98,9 +137,11 @@
 <script>
 import axios from "@nextcloud/axios";
 import { generateUrl, generateRemoteUrl } from "@nextcloud/router";
+import PlacementStudio from "./PlacementStudio.vue";
 
 export default {
   name: "UploadForSigningModal",
+  components: { PlacementStudio },
   props: {
     projects: { type: Array, default: function () { return []; } },
     uid: { type: String, default: "" },
@@ -114,6 +155,8 @@ export default {
       busy: false,
       error: "",
       progress: "",
+      placements: {},
+      studioOpen: false,
     };
   },
   computed: {
@@ -136,9 +179,36 @@ export default {
         // validates again server-side, which is what actually decides.
         if (email.indexOf("@") < 1 || seen[email]) return;
         seen[email] = true;
-        out.push({ email: email, displayName: email });
+        // signerKey has to match what ProjectSigningService derives from the
+        // identify method it builds — "email:" plus the lowercased address —
+        // or the placement is dropped on the way through.
+        out.push({ email: email, displayName: email, signerKey: "email:" + email });
       });
       return out;
+    },
+    placedCount: function () {
+      var placements = this.placements;
+      return this.signers.filter(function (s) { return !!placements[s.signerKey]; }).length;
+    },
+    // Only signers still in the list contribute, so editing the addresses after
+    // placing cannot smuggle a stale key through.
+    placementPayload: function () {
+      var placements = this.placements;
+      return this.signers
+        .map(function (s) {
+          var p = placements[s.signerKey];
+          if (!p) return null;
+          return {
+            signerKey: s.signerKey,
+            type: "signature",
+            page: p.page,
+            left: p.left,
+            top: p.top,
+            width: p.width,
+            height: p.height,
+          };
+        })
+        .filter(Boolean);
     },
     canSend: function () {
       return this.selectedProject !== null && this.files.length > 0 && this.signers.length > 0;
@@ -245,7 +315,15 @@ export default {
       );
       return axios.post(
         url,
-        { signature_flow: this.flow, signers: this.signers, placements: [] },
+        {
+          signature_flow: this.flow,
+          // The same placements go on every PDF in the batch, as they do in the
+          // project app — one set of signers, one layout.
+          signers: this.signers.map(function (s) {
+            return { email: s.email, displayName: s.displayName };
+          }),
+          placements: this.placementPayload,
+        },
         { headers: { "OCS-APIRequest": "true" } }
       );
     },
@@ -402,6 +480,59 @@ export default {
 .upsign__hint {
   font-size: 11px;
   color: var(--color-text-muted);
+}
+
+.upsign__place {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upsign__place-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.upsign__place-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.upsign__place-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.upsign__place-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.upsign__place-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upsign__place-state {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.upsign__place-state--done {
+  color: var(--color-badge-success-text);
 }
 
 .upsign__filerow {

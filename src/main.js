@@ -1,7 +1,19 @@
 import Vue from "vue";
 import Dashboard from "./components/Dashboard.vue";
 import axios from "@nextcloud/axios";
-import { generateUrl } from "@nextcloud/router";
+import { generateUrl, generateFilePath } from "@nextcloud/router";
+
+/*
+ * Where webpack fetches lazily-loaded chunks from.
+ *
+ * It bakes in /apps/employee_dashboard/js/, which 404s here: this app is
+ * installed under custom_apps and Nextcloud serves it from
+ * /custom_apps/employee_dashboard/js/ — the same path Util::addScript produces
+ * for the main bundle. Nothing noticed while everything shipped in one file;
+ * the Placement Studio loads pdf.js on demand, so the wrong base would mean the
+ * studio silently failing to open. generateFilePath knows the real app root.
+ */
+__webpack_public_path__ = generateFilePath("employee_dashboard", "", "js/");
 
 Vue.mixin({
   methods: {
