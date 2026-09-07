@@ -144,17 +144,26 @@ export default {
       }
       try {
         var pdfjs = await import(
-          /* webpackChunkName: "pdfjs" */ "pdfjs-dist/legacy/build/pdf"
+          /* webpackChunkName: "pdfjs" */ "pdfjs-dist/legacy/build/pdf.mjs"
         );
-        // The entry shim assigns window.pdfjsWorker, which pdf.js picks up by
-        // itself. That avoids handing the bundler a worker URL to resolve —
-        // the project app can write `?url` because it builds with Vite, and
-        // this app does not. The cost is that the worker runs on the main
-        // thread, which for placing a box on a page is not worth solving.
-        await import(/* webpackChunkName: "pdfjs" */ "pdfjs-dist/legacy/build/pdf.worker.entry");
+        // pdf.js 4 is ESM only and dropped pdf.worker.entry, so the worker is
+        // emitted as its own asset and located by URL. webpack 5 understands
+        // new URL(..., import.meta.url) and rewrites it to the built file.
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+          "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+          import.meta.url
+        ).toString();
 
         var bytes = await this.readBytes(this.file);
-        this.doc = await pdfjs.getDocument({ data: bytes }).promise;
+        // isEvalSupported:false is the standing hardening for a renderer that
+        // opens documents from outside the organisation. The version pin is
+        // what actually closes CVE-2024-4367 — arbitrary script execution from
+        // a crafted PDF, which reached everything on the Nextcloud origin —
+        // and this removes the eval path the exploit used regardless.
+        this.doc = await pdfjs.getDocument({
+          data: bytes,
+          isEvalSupported: false,
+        }).promise;
         this.pageCount = this.doc.numPages;
         await this.render();
       } catch (e) {
