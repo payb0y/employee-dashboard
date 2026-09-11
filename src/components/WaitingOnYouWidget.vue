@@ -1,8 +1,4 @@
 <template>
-  <!-- Absent, not empty. The Cards view keeps a "No unread mentions" state
-       because its wall needs every cell to hold its height; the overview is a
-       vertical stack, where a row that says "nothing" on most days is a row
-       people learn to scroll past. So the whole panel goes when both feeds are. -->
   <section v-if="total > 0" class="iz-panel waiting-widget">
     <div class="waiting-widget__header">
       <div class="waiting-widget__icon">
@@ -13,13 +9,10 @@
           <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8" />
         </svg>
       </div>
-      <span class="waiting-widget__title">Waiting on you</span>
+      <span class="waiting-widget__title">Talk mentions</span>
       <span class="iz-badge iz-badge--warning waiting-widget__count">{{ total }}</span>
     </div>
 
-    <!-- Two columns where there is width for them, one below 700px. Talk and
-         LibreSign are unrelated systems, but from this side they are one
-         sentence — someone is blocked on me — so they share a panel. -->
     <div class="waiting-widget__cols">
       <div v-if="mentions.length" class="waiting-widget__group">
         <div class="waiting-widget__group-head">
@@ -46,31 +39,6 @@
         >+{{ mentions.length - limit }} more in Cards</button>
       </div>
 
-      <div v-if="signatures.length" class="waiting-widget__group">
-        <div class="waiting-widget__group-head">
-          <svg class="waiting-widget__group-icon waiting-widget__group-icon--sign" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-            <path d="M14 2v6h6" />
-          </svg>
-          <span class="waiting-widget__group-name">To sign</span>
-          <span class="waiting-widget__group-n">{{ signatures.length }}</span>
-        </div>
-        <a
-          v-for="s in shownSignatures"
-          :key="s.id"
-          class="waiting-widget__row"
-          :href="signUrl(s.uuid)"
-        >
-          <span class="waiting-widget__row-title">{{ s.fileName }}</span>
-          <span class="waiting-widget__row-meta">From {{ s.requestedBy }} · {{ shortDate(s.createdAt) }}</span>
-        </a>
-        <button
-          v-if="signatures.length > limit"
-          type="button"
-          class="waiting-widget__more"
-          @click="$emit('switch-view', 'cards')"
-        >+{{ signatures.length - limit }} more in Cards</button>
-      </div>
     </div>
   </section>
 </template>
@@ -81,11 +49,7 @@ import { generateUrl } from "@nextcloud/router";
 export default {
   name: "WaitingOnYouWidget",
   props: {
-    // Both raw, never project-filtered: neither feed carries a projectId, so
-    // activeProjectId has nothing to narrow — the same reasoning that sends
-    // upcomingEvents to FocusNowWidget unfiltered.
     mentions: { type: Array, default: function () { return []; } },
-    signatures: { type: Array, default: function () { return []; } },
   },
   data: function () {
     // A summary, not an inbox: past this the Cards view has both full panels,
@@ -94,36 +58,15 @@ export default {
   },
   computed: {
     total: function () {
-      return this.mentions.length + this.signatures.length;
+      return this.mentions.length;
     },
     shownMentions: function () {
       return this.mentions.slice(0, this.limit);
-    },
-    shownSignatures: function () {
-      return this.signatures.slice(0, this.limit);
     },
   },
   methods: {
     roomUrl: function (token) {
       return generateUrl("/call/" + token);
-    },
-    // Two things are easy to get wrong here.
-    //
-    // The app id is `signatures`, not `libresign`. This stack ships LibreSign
-    // rebranded — appinfo/info.xml says <id>signatures</id> and occ lists it
-    // under that name — while its tables keep the oc_libresign_* prefix, which
-    // is what makes `libresign` look right. Measured against the running
-    // instance: /apps/signatures/p/sign/{uuid} answers, /apps/libresign/... 404s.
-    //
-    // And the uuid is the per-signer sign_request's, never libresign_file's —
-    // only that one resolves for the person being asked to sign.
-    signUrl: function (uuid) {
-      return generateUrl("/apps/signatures/p/sign/" + uuid);
-    },
-    shortDate: function (value) {
-      var d = new Date(value);
-      if (isNaN(d.getTime())) return "";
-      return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
     },
   },
 };
@@ -186,7 +129,6 @@ export default {
   flex-shrink: 0;
 }
 .waiting-widget__group-icon--talk { color: var(--chart-3); }
-.waiting-widget__group-icon--sign { color: var(--chart-5); }
 
 .waiting-widget__group-name {
   font-size: 11px;

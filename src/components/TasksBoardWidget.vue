@@ -30,6 +30,8 @@
       <input v-model="search" type="text" class="iz-input tasks-board__search" placeholder="Search tasks…" @input="currentPage = 1" />
     </div>
 
+    <TaskSignatures :signatures="signatures" :documents="documents" />
+
     <!-- Empty state -->
     <div v-if="tasks.length === 0" class="iz-empty tasks-board__empty">
       <p>No tasks assigned yet.</p>
@@ -186,9 +188,14 @@
 </template>
 
 <script>
+import TaskSignatures from "./TaskSignatures.vue";
+
 export default {
   name: "TasksBoardWidget",
+  components: { TaskSignatures },
   props: {
+    signatures: { type: Array, default: function () { return []; } },
+    documents: { type: Array, default: function () { return []; } },
     tasks: { type: Array, default: function () { return []; } },
     projects: { type: Array, default: function () { return []; } },
     focusFilter: { type: Object, default: null },

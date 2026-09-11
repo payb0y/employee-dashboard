@@ -1,5 +1,6 @@
 <template>
   <div class="cards-view">
+    <TaskSignatures :signatures="signatures" :documents="documents" />
     <div class="cards-view__grid">
       <ProjectsPanel :projects="projects" @select="$emit('filter-project', $event)" />
       <TasksPanel
@@ -35,7 +36,6 @@
       />
       <EventsPanel :events="events" />
       <MentionsPanel :mentions="mentions" />
-      <SignaturesPanel :signatures="signatures" />
     </div>
   </div>
 </template>
@@ -45,7 +45,7 @@ import TasksPanel from "./cards/TasksPanel.vue";
 import ProjectsPanel from "./cards/ProjectsPanel.vue";
 import EventsPanel from "./cards/EventsPanel.vue";
 import MentionsPanel from "./cards/MentionsPanel.vue";
-import SignaturesPanel from "./cards/SignaturesPanel.vue";
+import TaskSignatures from "./TaskSignatures.vue";
 
 // Day boundaries in local time. The end is derived by advancing the calendar
 // date rather than adding 86400000ms: on a DST transition the day is 23 or 25
@@ -63,12 +63,13 @@ function dayBounds(offsetDays) {
 
 export default {
   name: "CardsView",
-  components: { TasksPanel, ProjectsPanel, EventsPanel, MentionsPanel, SignaturesPanel },
+  components: { TasksPanel, ProjectsPanel, EventsPanel, MentionsPanel, TaskSignatures },
   props: {
     tasks: { type: Array, default: function () { return []; } },
     projects: { type: Array, default: function () { return []; } },
     events: { type: Array, default: function () { return []; } },
     mentions: { type: Array, default: function () { return []; } },
+    documents: { type: Array, default: function () { return []; } },
     signatures: { type: Array, default: function () { return []; } },
   },
   computed: {

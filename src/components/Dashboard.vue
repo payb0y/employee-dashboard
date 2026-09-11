@@ -55,32 +55,16 @@
           </div>
         </section>
 
-        <!-- 3.5 Waiting on you — Talk mentions and pending signatures.
-             Raw, not filtered: neither feed carries a projectId, so
-             activeProjectId has nothing to narrow, the same as upcomingEvents.
-             The widget renders nothing at all when both are empty. -->
         <WaitingOnYouWidget
           :mentions="data.unreadMentions || []"
-          :signatures="data.pendingSignatures || []"
           @switch-view="onSwitchView"
-        />
-
-        <!-- 3.6 Out for signature — the sending half. Raw for the same
-             reason as the panel above, and because most of these documents
-             carry no project at all. -->
-        <OutForSignatureWidget
-          :documents="data.outgoingSignatures || []"
-          :projects="data.projects || []"
-          :uid="(data.employee && data.employee.uid) || ''"
-          @switch-view="onSwitchView"
-          @refresh="$emit('refresh')"
         />
 
         <!-- A. My Week Panel -->
         <MyWeekWidget :tasks="filteredTasks" @select-task="onSelectTask" @filter-project="onProjectFilter" />
 
         <!-- B. My Tasks Board -->
-        <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" @filter-project="onProjectFilter" />
+        <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" :signatures="data.pendingSignatures || []" :documents="data.outgoingSignatures || []" @filter-project="onProjectFilter" />
 
         <!-- B2. Gantt Chart -->
         <GanttWidget v-if="activeProjectId === null" :timeline="filteredTimeline" :projects="filteredProjects" />
@@ -96,6 +80,7 @@
         :events="data.upcomingEvents || []"
         :mentions="data.unreadMentions || []"
         :signatures="data.pendingSignatures || []"
+        :documents="data.outgoingSignatures || []"
         @select-task="onSelectTask"
         @filter-project="onProjectFilter"
       />
@@ -114,7 +99,6 @@ import DashboardHeader from "./DashboardHeader.vue";
 import ProjectDrawerWidget from "./ProjectDrawerWidget.vue";
 import ProjectsMapWidget from "./ProjectsMapWidget.vue";
 import WaitingOnYouWidget from "./WaitingOnYouWidget.vue";
-import OutForSignatureWidget from "./OutForSignatureWidget.vue";
 import CardsView from "./CardsView.vue";
 
 export default {
@@ -130,7 +114,6 @@ export default {
     ProjectDrawerWidget,
     ProjectsMapWidget,
     WaitingOnYouWidget,
-    OutForSignatureWidget,
     CardsView,
   },
   props: {
