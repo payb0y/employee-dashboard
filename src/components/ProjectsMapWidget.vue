@@ -70,8 +70,10 @@ export default {
         return;
       }
       this._map = L.map(el, { scrollWheelZoom: true });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
+        // OSM requires a Referer; override Nextcloud only for tiles, without page paths.
+        referrerPolicy: "strict-origin",
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
       }).addTo(this._map);
       this.renderMarkers();
