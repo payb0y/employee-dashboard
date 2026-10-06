@@ -46,6 +46,8 @@
           @filter-project="onProjectFilter"
         />
 
+        <ProjectPortfolioPanel :organization-id="Number(data.organization.id)" />
+
         <!-- 3. Primary Focus Area -->
         <section class="emp-dashboard__focus-row">
           <FocusNowWidget :focus="derivedFocusNow" :events="data.upcomingEvents || []" @filter="onFocusFilter" @select-task="onSelectTask" />
@@ -115,6 +117,7 @@ export default {
     ProjectsMapWidget,
     WaitingOnYouWidget,
     CardsView,
+    ProjectPortfolioPanel: () => import("./ProjectPortfolioPanel.vue"),
   },
   props: {
     data: { type: Object, required: true },
