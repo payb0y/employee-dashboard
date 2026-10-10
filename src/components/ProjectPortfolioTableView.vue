@@ -81,12 +81,6 @@
         <span class="portfolio-table-view__workload-note">Same period as Portfolio: {{ periodWeekRange }}</span>
       </header>
 
-      <div v-if="teamWarnings.length" class="portfolio__warnings" role="status">
-        <span v-for="warning in teamWarnings" :key="warning.id" class="iz-badge iz-badge--warning">
-          {{ warning.name }} over capacity in {{ warning.overWeeks.join(", ") }}
-        </span>
-      </div>
-
       <div v-if="loading" class="portfolio__status-state iz-empty">Loading workload...</div>
       <div v-else-if="error" class="portfolio__status-state iz-error">{{ error }}</div>
       <div v-else-if="!weeks.length" class="portfolio__status-state iz-empty">No capacity data available.</div>
@@ -104,11 +98,20 @@
             <span>Ending {{ week.ending }}</span>
           </div>
           <div class="portfolio-table-view__week-badge" :class="workloadBadgeClass(week)">
-            <strong>{{ week.totalActive }} / {{ week.capacity }}</strong>
+            <strong>{{ week.totalActive }} {{ week.totalActive === 1 ? "project" : "projects" }}</strong>
             <span>{{ workloadStatusText(week) }}</span>
           </div>
         </article>
       </div>
+      <PeopleLoadGrid
+        v-if="tableData && !loading && !error"
+        :people="tableData.people || []"
+        :weeks="weeks"
+        :projects="tableData.capacityProjects || []"
+        :overload-warnings="tableData.overloadWarnings || []"
+        :max-per-person="maxPerPerson"
+        :show-teams="false"
+      />
     </section>
 
 
@@ -399,10 +402,11 @@
 import axios from "@nextcloud/axios";
 import { generateUrl } from "@nextcloud/router";
 import PlanningGapDetails from "./PlanningGapDetails.vue";
+import PeopleLoadGrid from "./PeopleLoadGrid.vue";
 
 export default {
   name: "ProjectPortfolioTableView",
-  components: { PlanningGapDetails },
+  components: { PlanningGapDetails, PeopleLoadGrid },
   props: {
     organizationId: { type: Number, default: null },
     initialFilter: { type: String, default: "all" },
@@ -461,11 +465,21 @@ export default {
       var m = String(this.lastUpdated.getMinutes()).padStart(2, "0");
       return "today " + h + ":" + m;
     },
+    maxPerPerson: function () {
+      return (this.tableData && this.tableData.maxProjectsPerMember) || 2;
+    },
     teamSummaryText: function () {
-      if (!this.tableData || !this.tableData.team) return "";
-      var t = this.tableData.team;
-      var note = this.formatNumber(t.capacity) + " concurrent projects";
-      return "My projects (" + (this.tableData.teams ? this.tableData.teams.length : 0) + " teams): " + note;
+      if (!this.tableData || !this.tableData.scope) return "";
+      var scope = this.tableData.scope;
+      var limit = "max " + this.maxPerPerson + " projects per person";
+      var teamCount = (this.tableData.teams || []).length;
+      if (scope.type === "mine") {
+        return "My load across " + teamCount + (teamCount === 1 ? " team" : " teams") + ", " + limit;
+      }
+      if (scope.type === "team" && scope.team) {
+        return this.peopleCount(scope.team.memberCount) + ", " + limit;
+      }
+      return this.peopleCount((this.tableData.people || []).length) + " in " + teamCount + (teamCount === 1 ? " team" : " teams") + ", " + limit;
     },
     periodStart: function () {
       if (this.tableData && this.tableData.period && this.tableData.period.weekStart) {
@@ -513,9 +527,6 @@ export default {
     },
     weeks: function () {
       return (this.tableData && this.tableData.weeks) || [];
-    },
-    teamWarnings: function () {
-      return (this.tableData && this.tableData.teamWarnings) || [];
     },
     planningGaps: function () { return (this.tableData && this.tableData.planningGaps) || []; },
     scheduleIssues: function () { return (this.tableData && this.tableData.scheduleIssues) || []; },
@@ -765,25 +776,27 @@ export default {
     formatNumber: function (val) {
       return Number(val || 0).toLocaleString("en-US", { maximumFractionDigits: 1 });
     },
+    peopleCount: function (count) {
+      return count === 1 ? "1 person" : Number(count || 0) + " people";
+    },
     workloadBadgeClass: function (week) {
       if (week.overCapacity) return "portfolio-table-view__badge--over";
-      if (week.totalActive === week.capacity && week.capacity > 0) return "portfolio-table-view__badge--norm";
-      if (week.totalActive < week.capacity) return "portfolio-table-view__badge--space";
+      if (week.freeSlots === 0) return "portfolio-table-view__badge--norm";
+      if (week.totalActive > 0) return "portfolio-table-view__badge--space";
       return "portfolio-table-view__badge--neutral";
     },
+    // Free slots only exist for one team or one person; across all teams
+    // the week reads as fine unless someone is overloaded.
     workloadStatusText: function (week) {
       if (week.overCapacity) {
-        var over = Math.round(week.totalActive - week.capacity);
-        return "+" + over + " above capacity";
+        return week.overloadedPeople === 1 ? "1 person overloaded" : week.overloadedPeople + " people overloaded";
       }
-      if (week.totalActive === week.capacity && week.capacity > 0) {
-        return "On target";
+      if (week.freeSlots === 0) return "No room left";
+      if (week.freeSlots !== null && week.freeSlots !== undefined) {
+        return week.freeSlots === 1 ? "1 free slot" : week.freeSlots + " free slots";
       }
-      if (week.totalActive === 0) {
-        return "No active projects";
-      }
-      var space = Math.round(week.capacity - week.totalActive);
-      return "Remaining: " + space;
+      if (week.totalActive === 0) return "No active projects";
+      return week.fullPeople ? this.peopleCount(week.fullPeople) + " full" : "Within capacity";
     },
     statusBadgeClass: function (bucket) {
       if (bucket === "100") return "iz-badge--success";
@@ -965,8 +978,8 @@ export default {
 }
 
 .portfolio-table-view__badge--norm {
-  background: var(--iz-success-bg, #e8f5e9);
-  color: var(--iz-success-text, #2e7d32);
+  background: var(--iz-warning-bg);
+  color: var(--iz-warning-text);
 }
 
 .portfolio-table-view__badge--space {
@@ -1484,11 +1497,6 @@ export default {
   height: 22px;
   flex: 0 0 22px;
   color: var(--iz-accent);
-}
-.portfolio-table-view .portfolio__warnings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--iz-gap-tight);
 }
 .portfolio-table-view .portfolio__weeks {
   display: grid;
