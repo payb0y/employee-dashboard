@@ -109,6 +109,12 @@
 				<p>Syncing timeline data...</p>
 			</div>
 
+			<div v-else-if="forbidden" class="timeline-v2__empty">
+				<ChartGantt :size="48" class="empty-icon" />
+				<h4>Timeline not available</h4>
+				<p>You are not a member of this project, so its timeline is not shared with you.</p>
+			</div>
+
 			<div v-else-if="!hasTimelineContent" class="timeline-v2__empty">
 				<ChartGantt :size="48" class="empty-icon" />
 				<h4>No timeline items defined</h4>
@@ -756,6 +762,7 @@ export default {
 	data() {
 		return {
 			loading: true,
+			forbidden: false,
 			saving: false,
 			allItems: [],
 			timelineSummary: null,
@@ -1455,8 +1462,13 @@ export default {
 			try {
 				const timelineUrl = generateUrl(`/apps/projectcreatoraio/api/v1/projects/${this.projectId}/timeline`)
 				const summaryUrl = generateUrl(`/apps/projectcreatoraio/api/v1/projects/${this.projectId}/timeline/summary`)
+				this.forbidden = false
 				const [timelineRes, summaryRes] = await Promise.all([
-					axios.get(timelineUrl).catch(() => ({ data: [] })),
+					axios.get(timelineUrl).catch((error) => {
+						// Team views list projects the user is not on.
+						if (error?.response?.status === 403) this.forbidden = true
+						return { data: [] }
+					}),
 					axios.get(summaryUrl).catch(() => ({ data: null })),
 				])
 				this.allItems = timelineRes.data || []

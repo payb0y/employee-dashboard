@@ -67,6 +67,10 @@
         :organization-id="organizationId"
         :initial-filter="tableInitialFilter"
         :week-start="displayedWeekStart"
+        :scope="scope"
+        :team-id="teamId"
+        :teams="teams"
+        @change-scope="onChangeScope"
         @move-period="movePeriod"
         @reset-period="resetPeriod"
         @select-date="selectDate"
@@ -76,7 +80,25 @@
       <div v-else class="portfolio__summary-view">
         <div class="portfolio__toolbar iz-card iz-card--flat" aria-label="Portfolio filters">
           <div class="portfolio__segmented" role="group" aria-label="Portfolio scope">
-            <button type="button" class="portfolio__segment portfolio__segment--active" aria-pressed="true">My projects</button>
+            <button
+              type="button"
+              class="portfolio__segment"
+              :class="{ 'portfolio__segment--active': scope === 'mine' }"
+              :aria-pressed="String(scope === 'mine')"
+              @click="onChangeScope({ scope: 'mine', teamId: teamId })"
+            >
+              My projects
+            </button>
+            <button
+              v-if="teams.length"
+              type="button"
+              class="portfolio__segment"
+              :class="{ 'portfolio__segment--active': scope === 'team' }"
+              :aria-pressed="String(scope === 'team')"
+              @click="onChangeScope({ scope: 'team', teamId: teamId || teams[0].id })"
+            >
+              My team
+            </button>
           </div>
 
           <div class="portfolio__period-stepper" title="Period controls the weekly workload strip below; click the date to jump to a specific week">
@@ -119,7 +141,16 @@
           <div class="portfolio__capacity">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
             <div class="portfolio__capacity-controls">
-              <small>My teams</small>
+              <select
+                v-if="scope === 'team' && teams.length > 1"
+                class="iz-select"
+                aria-label="Team"
+                :value="teamId"
+                @change="onChangeScope({ scope: 'team', teamId: Number($event.target.value) })"
+              >
+                <option v-for="team in teams" :key="team.id" :value="team.id">{{ team.name }}</option>
+              </select>
+              <small v-else>{{ scopeLabel }}</small>
             </div>
           </div>
         </div>
@@ -323,6 +354,9 @@ export default {
       portfolio: null,
       portfolioLoading: false,
       portfolioError: null,
+      // "mine" or "team"; team scope needs teamId, one of the teams below.
+      scope: "mine",
+      teamId: null,
       teams: [],
       displayedWeekStart: null,
       capacity: null,
@@ -437,6 +471,12 @@ export default {
         };
       });
     },
+    scopeLabel: function () {
+      if (this.scope !== "team") return "My teams";
+      var teamId = this.teamId;
+      var team = this.teams.find(function (item) { return item.id === teamId; });
+      return team ? team.name : "My team";
+    },
     trackedProjects: function () {
       return (this.portfolio && this.portfolio.trackedProjects) || 0;
     },
@@ -464,6 +504,17 @@ export default {
     },
   },
   methods: {
+    scopeParams: function () {
+      var params = { scope: this.scope, organizationId: this.organizationId };
+      if (this.scope === "team") params.teamId = this.teamId;
+      return params;
+    },
+    onChangeScope: function (change) {
+      if (change.scope === this.scope && change.teamId === this.teamId) return;
+      this.scope = change.scope;
+      this.teamId = change.teamId;
+      this.refreshPortfolio();
+    },
     onOpenDetailPlanning: function (project) {
       this.selectedDetailProject = project;
       this.viewMode = "detail";
@@ -473,7 +524,7 @@ export default {
       // row. Completed projects are not in the table and open with what we have.
       var row = null;
       try {
-        var params = { scope: "mine", organizationId: this.organizationId, weekStart: this.displayedWeekStart };
+        var params = { ...this.scopeParams(), weekStart: this.displayedWeekStart };
         var response = await axios.get(generateUrl("/apps/projectcreatoraio/api/v1/portfolio/table"), { params: params });
         row = (response.data.projects || []).find(function (p) { return Number(p.id) === Number(project.id); }) || null;
       } catch (e) {
@@ -509,8 +560,7 @@ export default {
       this.portfolioLoading = true;
       this.portfolioError = null;
       try {
-        var params = { scope: "mine", organizationId: this.organizationId };
-        var response = await axios.get(generateUrl("/apps/projectcreatoraio/api/v1/portfolio/completion"), { params: params });
+        var response = await axios.get(generateUrl("/apps/projectcreatoraio/api/v1/portfolio/completion"), { params: this.scopeParams() });
         if (requestId !== this.portfolioRequestId) return;
         this.portfolio = response.data;
       } catch (error) {
@@ -632,14 +682,15 @@ export default {
       this.selectedGap = null;
       try {
         var start = weekStart || this.displayedWeekStart || this.dateOnly(this.currentMonday());
-        var params = { scope: "mine", organizationId: this.organizationId, weekStart: start };
+        var params = { ...this.scopeParams(), weekStart: start };
         var response = await axios.get(
           generateUrl("/apps/projectcreatoraio/api/v1/portfolio/capacity"),
           { params: params },
         );
         if (requestId !== this.capacityRequestId) return;
         this.capacity = response.data;
-        this.teams = response.data.teams || [];
+        // Only "mine" lists the user's own teams; a team view lists none.
+        if (this.scope === "mine") this.teams = response.data.teams || [];
         this.selectedGap = null;
         this.displayedWeekStart = response.data.period.weekStart;
       } catch (e) {

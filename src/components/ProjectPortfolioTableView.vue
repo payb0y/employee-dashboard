@@ -26,7 +26,25 @@
     <!-- ── Top Controls Toolbar ── -->
     <div class="portfolio__toolbar iz-card iz-card--flat" aria-label="Planning overview filters">
       <div class="portfolio__segmented" role="group" aria-label="Portfolio scope">
-        <button type="button" class="portfolio__segment portfolio__segment--active" aria-pressed="true">My projects</button>
+        <button
+          type="button"
+          class="portfolio__segment"
+          :class="{ 'portfolio__segment--active': scope === 'mine' }"
+          :aria-pressed="String(scope === 'mine')"
+          @click="$emit('change-scope', { scope: 'mine', teamId: teamId })"
+        >
+          My projects
+        </button>
+        <button
+          v-if="teams.length"
+          type="button"
+          class="portfolio__segment"
+          :class="{ 'portfolio__segment--active': scope === 'team' }"
+          :aria-pressed="String(scope === 'team')"
+          @click="$emit('change-scope', { scope: 'team', teamId: teamId || teams[0].id })"
+        >
+          My team
+        </button>
       </div>
 
       <div class="portfolio__period-stepper" title="Period controls the weekly workload strip below; click the date to jump to a specific week">
@@ -69,6 +87,15 @@
       <div class="portfolio__capacity">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
         <div class="portfolio-table-view__capacity-box">
+          <select
+            v-if="scope === 'team' && teams.length > 1"
+            class="iz-select"
+            aria-label="Team"
+            :value="teamId"
+            @change="$emit('change-scope', { scope: 'team', teamId: Number($event.target.value) })"
+          >
+            <option v-for="team in teams" :key="team.id" :value="team.id">{{ team.name }}</option>
+          </select>
           <small v-if="teamSummaryText">{{ teamSummaryText }}</small>
         </div>
       </div>
@@ -411,6 +438,9 @@ export default {
     organizationId: { type: Number, default: null },
     initialFilter: { type: String, default: "all" },
     weekStart: { type: String, default: null },
+    scope: { type: String, default: "mine" },
+    teamId: { type: Number, default: null },
+    teams: { type: Array, default: function () { return []; } },
   },
   data: function () {
     return {
@@ -467,6 +497,9 @@ export default {
     },
     maxPerPerson: function () {
       return (this.tableData && this.tableData.maxProjectsPerMember) || 2;
+    },
+    scopeKey: function () {
+      return this.scope === "team" ? "team:" + this.teamId : this.scope;
     },
     teamSummaryText: function () {
       if (!this.tableData || !this.tableData.scope) return "";
@@ -624,6 +657,10 @@ export default {
       this.currentPage = 1;
       this.fetchTableData();
     },
+    scopeKey: function () {
+      this.currentPage = 1;
+      this.fetchTableData();
+    },
     initialFilter: function (val) {
       if (val) this.activeFilter = val;
     },
@@ -711,7 +748,10 @@ export default {
       this.error = null;
       this.selectedGap = null;
       try {
-        var params = { scope: "mine", organizationId: this.organizationId };
+        var params = { scope: this.scope, organizationId: this.organizationId };
+        if (this.scope === "team") {
+          params.teamId = this.teamId;
+        }
         if (this.weekStart) {
           params.weekStart = this.weekStart;
         }
