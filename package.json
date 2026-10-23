@@ -6,7 +6,8 @@
     "scripts": {
         "build": "webpack --mode production",
         "dev": "webpack --mode development",
-        "watch": "webpack --mode development --watch"
+        "watch": "webpack --mode development --watch",
+        "test": "node --test tests/*.test.mjs"
     },
     "dependencies": {
         "@nextcloud/axios": "^2.5.2",

@@ -45,7 +45,21 @@ src/components/MyWeekWidget.vue        — tasks organized Mon–Sun + overdue s
 src/components/GanttWidget.vue         — Gantt bars + milestones grouped by project
 src/components/ProjectsMapWidget.vue   — Leaflet map of project locations
 src/components/ProjectDrawerWidget.vue — detail drawer (timeline/notes/activity tabs)
+src/components/ProjectActivityFeed.vue — the drawer's Activity tab (see below)
 ```
+
+**Project activity is projectcreatoraio's, read a page at a time.**
+`ProjectActivityFeed.vue` calls `/apps/projectcreatoraio/api/v1/projects/{id}/activity`
+(cursor pages of 100, `source` filter), which checks access, redacts other
+people's private notes and direct chats, and merges in Deck's own activity —
+none of which a direct query of `oc_project_activity_events` does, so the
+dashboard payload no longer carries activity at all. `src/lib/activityFeed.mjs`
+words the events as projectcreatoraio's Activity tab does (a port of its
+`formatDescription`), groups them by day, and folds back-to-back identical
+events (one person, one action, one thing) into one line that opens up — a
+whiteboard saves itself every few seconds. "Load older activity" keeps
+fetching until 12 more lines show (at most 4 requests). Tests:
+`tests/activityFeed.test.mjs`.
 
 **Two views.** `Dashboard.vue` switches between them on `activeView`
 (`'overview' | 'cards'`), chosen by tabs in `DashboardHeader.vue` and persisted
@@ -100,7 +114,6 @@ no longer exist.
   "tasks":         [{ "id", "title", "description", "duedate", "done", "projectId", "projectName", "stackTitle", "boardTitle", "labels", "comments", "attachments" }],
   "projects":      [{ "id", "name", "number", "description", "status", "boardId", "folderId", "folderPath", "whiteBoardId", "clientName", "createdAt" }],
   "timeline":      [{ "id", "projectId", "label", "itemType", "startDate", "endDate", "color" }],
-  "activityEvents":[{ "id", "projectId", "eventType", "actorName", "occurredAt" }],
   "notes":         [{ "id", "projectId", "title", "content", "userId", "createdAt" }],
   "resources":     { "files", "notes", "whiteboards" },
   "upcomingEvents":[{ "uid", "title", "startsAt", "allDay", "color", "calendarId" }],
@@ -180,7 +193,7 @@ Tables to **never** query in this app: `oc_subscriptions`, `oc_plans`, `oc_admin
 
 ## Design System — the In Zicht theme
 
-**Read `/home/payboy/src/inzicht-nextcloud-theme/USING-THE-THEME.md` before
+**Read `/home/payboy/src/inzicht-stack/inzicht-nextcloud-theme/USING-THE-THEME.md` before
 touching any style.** It is the canonical guide, shared with `adminpage` and
 `superadminpage`, and it is the file to edit when a rule changes. It covers the
 token bridge, the primitive catalogue, why adding a class without deleting the
@@ -209,6 +222,15 @@ primitives and only layout stays in a component. The old block of hex values on
   reason: the fold changes the document height and scroll anchoring fights it.
 - This app draws **no canvas charts**, so `src/lib/izChart.js` is deliberately
   not vendored here. Add it from the theme the day that changes.
+- **Project Timeline is vendored from adminpage:** `src/components/ProjectTimeline.vue`,
+  `src/lib/projectTimeline.mjs` and `tests/projectTimeline.test.mjs` are
+  identical in adminpage, superadminpage and employee_dashboard. It draws
+  projectcreatoraio's timeline summary (`/apps/projectcreatoraio/api/v1/projects/{id}/timeline/summary`,
+  which checks access itself) as the Overview's timeline figures over the
+  Planning tab's Gantt. Change adminpage's copy, then copy all three files here.
+  See adminpage's CLAUDE.md, "Project Timeline".
+  Here it is the Project Detail drawer's Timeline tab; the dashboard-wide
+  `GanttWidget` is a separate, multi-project chart and still reads `data.timeline`.
 - Responsive breakpoints: `900px` (2-col → 1-col), `700px`, `600px`.
 
 ---
@@ -228,7 +250,13 @@ npm run dev
 
 # Watch mode
 npm run watch
+
+# Tests
+npm test
 ```
+
+Node is not installed inside WSL; run these in the `node:22` image:
+`docker run --rm -v "$PWD":/app -w /app node:22 npm run build`.
 
 **Always run `npm run build` after changing any file under `src/`.** The compiled bundle in `js/` is committed to the repo (not gitignored) — Nextcloud loads it directly.
 
@@ -247,28 +275,28 @@ Two longer reference docs live at the repo root and are not duplicated here:
 
 ## Dev Environment
 
-The live database is **PostgreSQL in `nc_pg`** — not the `nc_db` MariaDB
+The live database is **PostgreSQL in `nextcloud-db`** — not the `nc_db` MariaDB
 container an older version of this file pointed at, and not
 `master-database-mysql-1`, whose `nextcloud` DB is an empty skeleton that is
 easy to mistake for the real thing.
 
 ```bash
 # psql shell
-docker exec -it nc_pg psql -U nextcloud -d nextcloud
+docker exec -it nextcloud-db psql -U nextcloud -d nextcloud
 
 # one-shot query
-docker exec nc_pg psql -U nextcloud -d nextcloud -c "SELECT ..."
+docker exec nextcloud-db psql -U nextcloud -d nextcloud -c "SELECT ..."
 
 # occ
-docker exec -u www-data master-nextcloud-1 php occ <command>
+docker exec -u www-data nextcloud-app php occ <command>
 
 # deploy the theme after changing it
-cd /home/payboy/src/inzicht-nextcloud-theme && ./deploy-docker.sh master-nextcloud-1
+cd /home/payboy/src/inzicht-stack/inzicht-nextcloud-theme && ./deploy-docker.sh nextcloud-app
 ```
 
 Database: `nextcloud`. Table prefix: `oc_`.
 
-**Start `nc_pg` before `master-nextcloud-1`.** If Nextcloud boots without its
+**Start `nextcloud-db` before `nextcloud-app`.** If Nextcloud boots without its
 database it runs `maintenance:install` and overwrites `config.php`, losing
 `theme=inzicht`, the pgsql connection and the instance secrets. No data is lost,
 but the instance needs rebuilding by hand.
@@ -352,7 +380,7 @@ The filter in `Dashboard.vue` uses `activeProjectId`. If a new widget needs proj
   ties with the theme and wins on order, so the primitive silently never applies
 - Do not use `alert()` or `confirm()` — use the vendored `ConfirmDialog.vue`
 - Do not edit the deployed theme inside the container; edit
-  `/home/payboy/src/inzicht-nextcloud-theme` and run its `deploy-docker.sh`
+  `/home/payboy/src/inzicht-stack/inzicht-nextcloud-theme` and run its `deploy-docker.sh`
 - Do not bump `<version>` in `appinfo/info.xml` for frontend-only work. Bump it
   only when PHP changes (`lib/`, `appinfo/`), because the version is what makes
   Nextcloud run an upgrade cycle

@@ -69,41 +69,11 @@
           </button>
         </div>
 
-        <!-- Tab: Timeline -->
+        <!-- Tab: Timeline — projectcreatoraio's plan for this project: the
+             Overview's timeline figures over the Planning tab's Gantt
+             (ProjectTimeline.vue, vendored from adminpage). -->
         <div v-if="activeTab === 'timeline'" class="project-drawer__tab-body">
-          <div v-if="projectTimeline.length === 0" class="iz-empty project-drawer__empty-tab">No timeline items.</div>
-          <template v-else>
-            <div class="pd-gantt">
-              <!-- Date axis -->
-              <div class="pd-gantt__axis">
-                <div class="pd-gantt__label-col"></div>
-                <div class="pd-gantt__bar-col">
-                  <div class="pd-gantt__ticks">
-                    <span v-for="(tick, i) in drawerDateTicks" :key="i" class="pd-gantt__tick" :style="{ left: tick.pct + '%' }">{{ tick.label }}</span>
-                  </div>
-                </div>
-              </div>
-              <!-- Today line (full-height) -->
-              <div v-if="drawerTodayPct !== null" class="pd-gantt__today-line" :style="{ left: 'calc(120px + ' + (drawerTodayPct / 100).toFixed(4) + ' * (100% - 120px))' }">
-                <span class="pd-gantt__today-pill">Today</span>
-              </div>
-              <!-- Rows -->
-              <div v-for="item in projectTimeline" :key="item.id" class="pd-gantt__row">
-                <div class="pd-gantt__label-col">
-                  <span class="pd-gantt__item-label" :title="item.label">{{ item.label }}</span>
-                  <span class="pd-gantt__item-type" :class="'pd-gantt__item-type--' + item.itemType">{{ item.itemType }}</span>
-                </div>
-                <div class="pd-gantt__bar-col">
-                  <div v-if="item.itemType === 'phase'" class="pd-gantt__bar" :style="drawerBarStyle(item)" :title="item.label + ': ' + formatRange(item)">
-                    <span class="pd-gantt__bar-text">{{ formatRange(item) }}</span>
-                  </div>
-                  <div v-else class="pd-gantt__milestone" :style="drawerMilestoneStyle(item)" :title="item.label + ': ' + shortDate(item.startDate || item.endDate)">
-                    <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0 14,7 7,14 0,7" :fill="item.color || '#f59e0b'" /></svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
+          <ProjectTimeline :src="timelineSrc" :items-src="timelineItemsSrc" :planning-url="planningUrl" />
         </div>
 
         <!-- Tab: Notes -->
@@ -119,21 +89,10 @@
           </div>
         </div>
 
-        <!-- Tab: Activity -->
+        <!-- Tab: Activity — projectcreatoraio's activity, a page at a time,
+             grouped by day (ProjectActivityFeed.vue). -->
         <div v-if="activeTab === 'activity'" class="project-drawer__tab-body">
-          <div v-if="projectEvents.length === 0" class="iz-empty project-drawer__empty-tab">No activity recorded.</div>
-          <div class="project-drawer__activity">
-            <div v-for="event in projectEvents" :key="event.id" class="project-drawer__event">
-              <div class="project-drawer__event-dot"></div>
-              <div class="project-drawer__event-body">
-                <span class="project-drawer__event-text">
-                  <strong>{{ event.actorName || event.actorUid }}</strong>
-                  {{ eventDescription(event) }}
-                </span>
-                <span class="project-drawer__event-time">{{ timeAgo(event.occurredAt) }}</span>
-              </div>
-            </div>
-          </div>
+          <ProjectActivityFeed :project-id="project.id" />
         </div>
       </template>
     </div>
@@ -141,12 +100,15 @@
 </template>
 
 <script>
+import { generateUrl } from "@nextcloud/router";
+import ProjectTimeline from "./ProjectTimeline.vue";
+import ProjectActivityFeed from "./ProjectActivityFeed.vue";
+
 export default {
   name: "ProjectDrawerWidget",
+  components: { ProjectTimeline, ProjectActivityFeed },
   props: {
     project: { type: Object, default: null },
-    timeline: { type: Array, default: function () { return []; } },
-    activityEvents: { type: Array, default: function () { return []; } },
     notes: { type: Array, default: function () { return []; } },
   },
   data: function () {
@@ -164,15 +126,17 @@ export default {
       if (!this.project || !this.project.whiteBoardId) return "#";
       return OC.generateUrl("/apps/whiteboard/" + this.project.whiteBoardId);
     },
-    projectTimeline: function () {
-      if (!this.project) return [];
-      var pid = this.project.id;
-      return this.timeline.filter(function (t) { return t.projectId === pid; });
+    timelineSrc: function () {
+      if (!this.project) return null;
+      return generateUrl("/apps/projectcreatoraio/api/v1/projects/{id}/timeline/summary", { id: this.project.id });
     },
-    projectEvents: function () {
-      if (!this.project) return [];
-      var pid = this.project.id;
-      return this.activityEvents.filter(function (e) { return e.projectId === pid; });
+    timelineItemsSrc: function () {
+      if (!this.project) return null;
+      return generateUrl("/apps/projectcreatoraio/api/v1/projects/{id}/timeline", { id: this.project.id });
+    },
+    planningUrl: function () {
+      if (!this.project) return null;
+      return generateUrl("/apps/projectcreatoraio/new/projects/{id}?tab=planning", { id: this.project.id });
     },
     projectNotes: function () {
       if (!this.project) return [];
@@ -181,48 +145,10 @@ export default {
     },
     tabs: function () {
       return [
-        { key: "timeline", label: "Timeline", count: this.projectTimeline.length },
+        { key: "timeline", label: "Timeline" },
         { key: "notes", label: "Notes", count: this.projectNotes.length },
-        { key: "activity", label: "Activity", count: this.projectEvents.length },
+        { key: "activity", label: "Activity" },
       ];
-    },
-    drawerDateRange: function () {
-      var min = null;
-      var max = null;
-      this.projectTimeline.forEach(function (item) {
-        var dates = [item.startDate, item.endDate].filter(Boolean);
-        dates.forEach(function (d) {
-          var ts = new Date(d + "T00:00:00").getTime();
-          if (min === null || ts < min) min = ts;
-          if (max === null || ts > max) max = ts;
-        });
-      });
-      if (min === null) return { min: 0, max: 0, span: 0 };
-      var pad = 4 * 86400000;
-      min -= pad;
-      max += pad;
-      return { min: min, max: max, span: max - min };
-    },
-    drawerTodayPct: function () {
-      if (!this.drawerDateRange.span) return null;
-      var today = new Date();
-      today.setHours(0, 0, 0, 0);
-      var ts = today.getTime();
-      if (ts < this.drawerDateRange.min || ts > this.drawerDateRange.max) return null;
-      return ((ts - this.drawerDateRange.min) / this.drawerDateRange.span) * 100;
-    },
-    drawerDateTicks: function () {
-      var range = this.drawerDateRange;
-      if (!range.span) return [];
-      var ticks = [];
-      var count = 5;
-      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      for (var i = 0; i <= count; i++) {
-        var ts = range.min + (range.span * i / count);
-        var d = new Date(ts);
-        ticks.push({ pct: (i / count) * 100, label: months[d.getMonth()] + " " + d.getDate() });
-      }
-      return ticks;
     },
   },
   watch: {
@@ -247,50 +173,6 @@ export default {
       var d = new Date(iso);
       var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       return months[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
-    },
-    formatRange: function (item) {
-      var s = item.startDate ? this.shortDate(item.startDate) : "";
-      var e = item.endDate ? this.shortDate(item.endDate) : "";
-      if (item.itemType === "milestone") return s || e || "\u2014";
-      if (s && e && s !== e) return s + " \u2013 " + e;
-      return s || e || "\u2014";
-    },
-    shortDate: function (iso) {
-      if (!iso) return "";
-      var d = new Date(iso + "T00:00:00");
-      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      return months[d.getMonth()] + " " + d.getDate();
-    },
-    eventDescription: function (event) {
-      var typeMap = {
-        project_created: "created the project",
-        member_added: "added a member",
-        member_removed: "removed a member",
-        timeline_item_created: "added a timeline item",
-        timeline_item_updated: "updated a timeline item",
-        status_changed: "changed the status",
-        note_added: "added a note",
-        file_uploaded: "uploaded a file",
-        board_linked: "linked a Deck board",
-        folder_linked: "linked a shared folder",
-        whiteboard_linked: "linked a whiteboard",
-      };
-      return typeMap[event.eventType] || event.eventType.replace(/_/g, " ");
-    },
-    drawerDatePct: function (isoDate) {
-      if (!isoDate || !this.drawerDateRange.span) return 0;
-      var ts = new Date(isoDate + "T00:00:00").getTime();
-      return ((ts - this.drawerDateRange.min) / this.drawerDateRange.span) * 100;
-    },
-    drawerBarStyle: function (item) {
-      var left = this.drawerDatePct(item.startDate || item.endDate);
-      var right = this.drawerDatePct(item.endDate || item.startDate);
-      var width = Math.max(right - left, 1);
-      return { left: left + "%", width: width + "%", background: item.color || "#3b82f6" };
-    },
-    drawerMilestoneStyle: function (item) {
-      var pct = this.drawerDatePct(item.startDate || item.endDate);
-      return { left: "calc(" + pct + "% - 7px)" };
     },
     timeAgo: function (iso) {
       if (!iso) return "";
@@ -491,123 +373,6 @@ export default {
   border: none;
 }
 
-/* Drawer Gantt chart */
-.pd-gantt {
-  position: relative;
-  overflow: hidden;
-  min-width: 0;
-  margin-bottom: 4px;
-}
-.pd-gantt__axis,
-.pd-gantt__row {
-  display: flex;
-  align-items: center;
-  min-height: 28px;
-}
-.pd-gantt__label-col {
-  width: 120px;
-  min-width: 120px;
-  flex-shrink: 0;
-  padding-right: 10px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  overflow: hidden;
-}
-.pd-gantt__bar-col {
-  flex: 1;
-  position: relative;
-  min-width: 200px;
-  height: 100%;
-}
-.pd-gantt__ticks {
-  position: relative;
-  height: 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-.pd-gantt__tick {
-  position: absolute;
-  top: 0;
-  transform: translateX(-50%);
-  font-size: 9px;
-  color: var(--color-text-muted, #9ca3af);
-  white-space: nowrap;
-}
-.pd-gantt__today-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--color-danger);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--color-danger) 45%, transparent);
-  z-index: 3;
-  pointer-events: none;
-}
-.pd-gantt__today-pill {
-  position: absolute;
-  top: 3px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-danger);
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
-  letter-spacing: 0.05em;
-  box-shadow: 0 1px 4px color-mix(in oklab, var(--color-danger) 40%, transparent);
-}
-.pd-gantt__row {
-  min-height: 30px;
-  padding: 2px 0;
-}
-.pd-gantt__row:hover { background: var(--bg-subtle); }
-.pd-gantt__item-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--color-text-primary, #1a1a2e);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 78px;
-}
-.pd-gantt__item-type {
-  font-size: 9px;
-  font-weight: 600;
-  padding: 1px 4px;
-  border-radius: 3px;
-  text-transform: capitalize;
-  flex-shrink: 0;
-}
-.pd-gantt__item-type--phase { background: var(--accent-bg); color: var(--accent-on-bg); }
-.pd-gantt__item-type--milestone { background: var(--color-badge-warning-bg); color: var(--color-badge-warning-text); }
-.pd-gantt__bar {
-  position: absolute;
-  top: 4px;
-  height: 20px;
-  border-radius: 5px;
-  min-width: 4px;
-  display: flex;
-  align-items: center;
-  padding: 0 5px;
-  overflow: hidden;
-  opacity: 0.88;
-  transition: opacity 0.15s;
-}
-.pd-gantt__row:hover .pd-gantt__bar { opacity: 1; }
-.pd-gantt__bar-text {
-  font-size: 9px;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-}
-.pd-gantt__milestone {
-  position: absolute;
-  top: 6px;
-}
-
 /* Notes */
 .project-drawer__note-card {
   padding: 12px;
@@ -631,43 +396,6 @@ export default {
   white-space: pre-wrap;
 }
 .project-drawer__note-meta {
-  font-size: 10px;
-  color: var(--color-text-muted, #9ca3af);
-}
-
-/* Activity feed */
-.project-drawer__activity {
-  display: flex;
-  flex-direction: column;
-}
-.project-drawer__event {
-  display: flex;
-  gap: 10px;
-  padding: 8px 0;
-  position: relative;
-}
-.project-drawer__event + .project-drawer__event { border-top: 1px solid var(--bg-subtle); }
-.project-drawer__event-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-border-strong);
-  flex-shrink: 0;
-  margin-top: 6px;
-}
-.project-drawer__event-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.project-drawer__event-text {
-  font-size: 12px;
-  color: var(--color-text-secondary, #6b7280);
-  line-height: 1.4;
-}
-.project-drawer__event-text strong { color: var(--color-text-primary, #1a1a2e); font-weight: 600; }
-.project-drawer__event-time {
   font-size: 10px;
   color: var(--color-text-muted, #9ca3af);
 }

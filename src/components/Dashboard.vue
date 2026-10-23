@@ -72,7 +72,7 @@
         <GanttWidget v-if="activeProjectId === null" :timeline="filteredTimeline" :projects="filteredProjects" />
 
         <!-- D. Project Context Drawer -->
-        <ProjectDrawerWidget :project="selectedProject" :timeline="data.timeline" :activity-events="data.activityEvents || []" :notes="data.notes || []" />
+        <ProjectDrawerWidget :project="selectedProject" :notes="data.notes || []" />
       </template>
 
       <CardsView
