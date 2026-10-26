@@ -42,7 +42,7 @@ src/components/WorkloadWidget.vue      — open/done/completion%/active projects
 src/components/ScheduleWidget.vue      — due today/week/no-date/next milestone
 src/components/TasksBoardWidget.vue    — main task list (chip tabs + search + inline detail panel)
 src/components/MyWeekWidget.vue        — tasks organized Mon–Sun + overdue section
-src/components/GanttWidget.vue         — Gantt bars + milestones grouped by project
+src/components/GanttWidget.vue         — every project's Planning timeline on one chart (see below)
 src/components/ProjectsMapWidget.vue   — Leaflet map of project locations
 src/components/ProjectDrawerWidget.vue — detail drawer (timeline/notes/activity tabs)
 src/components/ProjectActivityFeed.vue — the drawer's Activity tab (see below)
@@ -60,6 +60,20 @@ events (one person, one action, one thing) into one line that opens up — a
 whiteboard saves itself every few seconds. "Load older activity" keeps
 fetching until 12 more lines show (at most 4 requests). Tests:
 `tests/activityFeed.test.mjs`.
+
+**The dashboard-wide Project Timeline is projectcreatoraio's too.**
+`GanttWidget.vue` draws each of the employee's projects the way the Planning
+tab draws one — the System Planning row and the phases, cards left to the
+drawer — on one shared date range (`portfolioGanttOf` in the vendored
+`src/lib/projectTimeline.mjs`). Its data comes from
+`GET /api/project-timelines` (`ProjectTimelinesService`), which builds
+projectcreatoraio's timeline summary for each project in
+`EmployeeService::getUserProjects` server-side, each in a transaction it
+always rolls back: projectcreatoraio's own endpoint would sync every
+project's card dates to Deck on each dashboard load. Phases go out without
+their cards. The raw `timeline` array in the dashboard payload
+(`project_timeline_items`) is now only read for the Schedule card's next
+milestone.
 
 **Two views.** `Dashboard.vue` switches between them on `activeView`
 (`'overview' | 'cards'`), chosen by tabs in `DashboardHeader.vue` and persisted

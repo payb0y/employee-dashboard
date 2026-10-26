@@ -69,7 +69,7 @@
         <TasksBoardWidget ref="tasksBoard" :tasks="filteredTasks" :projects="filteredProjects" :focus-filter="focusFilter" :signatures="data.pendingSignatures || []" :documents="data.outgoingSignatures || []" @filter-project="onProjectFilter" />
 
         <!-- B2. Gantt Chart -->
-        <GanttWidget v-if="activeProjectId === null" :timeline="filteredTimeline" :projects="filteredProjects" />
+        <GanttWidget v-if="activeProjectId === null" :projects="filteredProjects" @select-project="onProjectFilter" />
 
         <!-- D. Project Context Drawer -->
         <ProjectDrawerWidget :project="selectedProject" :notes="data.notes || []" />

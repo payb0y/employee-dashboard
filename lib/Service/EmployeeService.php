@@ -74,6 +74,16 @@ class EmployeeService {
         ];
     }
 
+    /**
+     * The projects the dashboard lists for this employee: their project
+     * groups' projects, and any board they hold a card on.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getUserProjects(string $uid): array {
+        return $this->fetchUserProjects($uid);
+    }
+
     // ── Org resolution ───────────────────────────────────────────────
 
     public function resolveOrgId(string $uid): ?int {
