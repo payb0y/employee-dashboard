@@ -1,18 +1,25 @@
 <template>
-  <section class="iz-panel proj-map">
-    <header class="proj-map__header">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M1 6v15l7-3 8 3 7-3V3l-7 3-8-3-7 3z" />
-        <line x1="8" y1="3" x2="8" y2="18" />
-        <line x1="16" y1="6" x2="16" y2="21" />
+  <section class="iz-panel iz-panel--list proj-map">
+    <div class="proj-map__header" :aria-expanded="collapsed ? 'false' : 'true'" @click="collapsed = !collapsed">
+      <h3 class="proj-map__title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 6v15l7-3 8 3 7-3V3l-7 3-8-3-7 3z" />
+          <line x1="8" y1="3" x2="8" y2="18" />
+          <line x1="16" y1="6" x2="16" y2="21" />
+        </svg>
+        Project locations
+        <span class="proj-map__count">{{ projects.length }}</span>
+      </h3>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="proj-map__chevron" :class="{ 'proj-map__chevron--rotated': collapsed }">
+        <polyline points="18 15 12 9 6 15" />
       </svg>
-      <span class="proj-map__title">Project locations</span>
-      <span class="proj-map__count">{{ projects.length }}</span>
-    </header>
-    <div v-if="projects.length === 0" class="proj-map__empty">
-      No project locations available
     </div>
-    <div v-else ref="mapRoot" class="proj-map__container"></div>
+    <div v-show="!collapsed" class="proj-map__body">
+      <div v-if="projects.length === 0" class="proj-map__empty">
+        No project locations available
+      </div>
+      <div v-else ref="mapRoot" class="proj-map__container"></div>
+    </div>
   </section>
 </template>
 
@@ -30,6 +37,7 @@ export default {
   },
   data: function () {
     return {
+      collapsed: false,
       _map: null,
       _markerGroup: null,
     };
@@ -47,6 +55,19 @@ export default {
     }
   },
   watch: {
+    // A map laid out while folded has no size; once it unfolds, let Leaflet
+    // measure the container again and re-fit the markers.
+    collapsed: function (isCollapsed) {
+      if (isCollapsed || !this._map) {
+        return;
+      }
+      this.$nextTick(function () {
+        if (this._map) {
+          this._map.invalidateSize();
+          this.renderMarkers();
+        }
+      });
+    },
     projects: function (newList) {
       if (!this._map && newList.length > 0) {
         this.$nextTick(this.initMap);
@@ -131,18 +152,37 @@ export default {
 
 <style scoped>
 .proj-map {  margin-bottom: var(--spacing-lg, 24px);
+  overflow: hidden;
   isolation: isolate;
 }
 .proj-map__header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: var(--spacing-md, 16px);
-  color: var(--color-text-primary, #1a1a2e);
+  justify-content: space-between;
+  /* 20px sides, matching --iz-pad-panel. */
+  padding: var(--spacing-md, 16px) 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
 }
+.proj-map__header:hover { background: var(--bg-subtle); }
 .proj-map__title {
   font-size: 15px;
   font-weight: 700;
+  color: var(--color-text-primary, #1a1a2e);
+  margin: 0; padding: 0; border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.proj-map__chevron {
+  color: var(--color-text-muted, #9ca3af);
+  transition: transform 0.3s;
+}
+.proj-map__chevron--rotated { transform: rotate(180deg); }
+.proj-map__body {
+  /* 4px on top so the map does not sit flush against the header. */
+  padding: 4px 20px 20px;
 }
 .proj-map__count {
   font-size: 11px;
