@@ -14,10 +14,7 @@
           <span class="iz-identity__avatar iz-identity__avatar--sm">{{ initial }}</span>
           <div class="dash-header__who-text">
             <h2 class="dash-header__name">{{ employee.displayName || employee.uid }}</h2>
-            <span class="dash-header__sub">
-              <span v-if="employee.title">{{ employee.title }} · </span>
-              <span v-if="organization">{{ organization.name }}</span>
-            </span>
+            <span class="dash-header__sub">{{ subtitle }}</span>
           </div>
         </div>
         <div class="dash-header__counts">
@@ -25,16 +22,16 @@
             v-if="focusNow.overdue > 0"
             class="iz-badge iz-badge--danger dash-header__count"
             @click="$emit('filter', 'Overdue')"
-          >{{ focusNow.overdue }} overdue</span>
+          >{{ t('{n} overdue', { n: focusNow.overdue }) }}</span>
           <span
             v-if="focusNow.dueToday > 0"
             class="iz-badge iz-badge--warning dash-header__count"
             @click="$emit('filter', 'Today')"
-          >{{ focusNow.dueToday }} due today</span>
+          >{{ t('{n} due today', { n: focusNow.dueToday }) }}</span>
           <span
             class="iz-badge iz-badge--accent dash-header__count"
             @click="$emit('filter', 'All Open')"
-          >{{ workload.open }} open</span>
+          >{{ t('{n} open', { n: workload.open }) }}</span>
         </div>
 
         <!-- View switcher. Lives in the identity tier, which never collapses,
@@ -44,12 +41,12 @@
             class="iz-tab"
             :class="{ 'iz-tab--active': activeView === 'overview' }"
             @click="$emit('switch-view', 'overview')"
-          >Overview</button>
+          >{{ t('Overview') }}</button>
           <button
             class="iz-tab"
             :class="{ 'iz-tab--active': activeView === 'cards' }"
             @click="$emit('switch-view', 'cards')"
-          >Cards</button>
+          >{{ t('Cards') }}</button>
         </div>
       </div>
 
@@ -63,32 +60,32 @@
               v-model="tabSearch"
               type="text"
               class="iz-input dash-header__search"
-              placeholder="Search projects…"
+              :placeholder="t('Search projects…')"
             />
             <select v-model="tabStatusFilter" class="iz-select dash-header__select">
-              <option value="">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Completed">Completed</option>
-              <option value="Archived">Archived</option>
+              <option value="">{{ t('All Statuses') }}</option>
+              <option value="active">{{ t('Active') }}</option>
+              <option value="completed">{{ t('Completed') }}</option>
+              <option value="archived">{{ t('Archived') }}</option>
             </select>
             <select v-model="tabTaskDueFilter" class="iz-select dash-header__select">
-              <option value="">All Task Due</option>
-              <option value="overdue">Has Overdue</option>
-              <option value="today">Has Due Today</option>
-              <option value="nextSevenDays">Has Upcoming</option>
-              <option value="nodue">Has No Due Date</option>
+              <option value="">{{ t('All Task Due') }}</option>
+              <option value="overdue">{{ t('Has Overdue') }}</option>
+              <option value="today">{{ t('Has Due Today') }}</option>
+              <option value="nextSevenDays">{{ t('Has Upcoming') }}</option>
+              <option value="nodue">{{ t('Has No Due Date') }}</option>
             </select>
             <select v-model="tabTaskStatusFilter" class="iz-select dash-header__select">
-              <option value="">All Task Status</option>
-              <option value="open">Has Open Tasks</option>
-              <option value="done">Has Done Tasks</option>
+              <option value="">{{ t('All Task Status') }}</option>
+              <option value="open">{{ t('Has Open Tasks') }}</option>
+              <option value="done">{{ t('Has Done Tasks') }}</option>
             </select>
 
             <!-- Completion bands. Same quartiles as adminpage's
                  ProjectPerformancePanel, but the rate is MY completion in the
                  project, and each band carries how many projects it holds — the
                  strip scrolls, so its far end is often out of sight. -->
-            <div class="dash-header__bands" role="group" aria-label="Completion rate">
+            <div class="dash-header__bands" role="group" :aria-label="t('Completion rate')">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="14"
@@ -120,7 +117,7 @@
               v-if="hasActiveFilters"
               class="iz-btn iz-btn--sm dash-header__clear"
               @click="clearProjectFilters"
-            >✕ Clear</button>
+            >{{ t('✕ Clear') }}</button>
           </div>
         </div>
       </div>
@@ -138,7 +135,7 @@
           >
             <span
               class="dash-header__tab-dot"
-              :class="'dash-header__tab-dot--' + p.statusLabel.toLowerCase()"
+              :class="'dash-header__tab-dot--' + p.statusKey"
             ></span>
             <span class="dash-header__tab-name">{{ p.name }}</span>
             <span v-if="p.number" class="dash-header__tab-num">{{ p.number }}</span>
@@ -146,12 +143,12 @@
               class="dash-header__tab-pct"
               :class="'dash-header__tab-pct--' + bandOf(p)"
               :title="p.progressPct === null
-                ? 'No tasks assigned to you here'
-                : p.doneCount + ' of ' + p.taskCount + ' of your tasks done'"
-            >{{ p.progressPct === null ? "—" : p.progressPct + "%" }}</span>
+                ? t('No tasks assigned to you here')
+                : t('{done} of {total} of your tasks done', { done: p.doneCount, total: p.taskCount })"
+            >{{ p.progressPct === null ? "—" : t('{pct}%', { pct: p.progressPct }) }}</span>
           </button>
           <span v-if="visibleProjects.length === 0" class="dash-header__strip-empty">
-            No projects match filters
+            {{ t('No projects match filters') }}
           </span>
         </div>
         <!-- Only offered once the filters have folded away, and marked when a
@@ -161,7 +158,7 @@
           class="iz-btn iz-btn--sm iz-btn--icon dash-header__filter-toggle"
           :class="{ 'dash-header__filter-toggle--on': hasActiveFilters }"
           :aria-expanded="toolbarExpanded ? 'true' : 'false'"
-          :title="toolbarExpanded ? 'Hide filters' : 'Show filters'"
+          :title="toolbarExpanded ? t('Hide filters') : t('Show filters')"
           @click="toolbarExpanded = !toolbarExpanded"
         >
           <svg
@@ -186,6 +183,8 @@
 </template>
 
 <script>
+import { t, tc } from "../lib/l10n.mjs";
+
 export default {
   name: "DashboardHeader",
   props: {
@@ -212,6 +211,15 @@ export default {
     };
   },
   computed: {
+    subtitle: function () {
+      // employee.title is the organisation role code; show its label, and any
+      // unknown code as it is.
+      var roleLabels = { member: tc("Member", "account role"), admin: tc("Administrator", "account role") };
+      var title = roleLabels[this.employee.title] || this.employee.title;
+      var org = this.organization && this.organization.name;
+      if (title && org) return t("{title} · {organization}", { title: title, organization: org });
+      return title || org || "";
+    },
     initial: function () {
       var name = this.employee.displayName || this.employee.uid || "?";
       return name.charAt(0).toUpperCase();
@@ -225,7 +233,9 @@ export default {
       return this.isSticky && !this.toolbarExpanded;
     },
     enrichedProjects: function () {
-      var statusMap = { 0: "Active", 1: "Completed", 2: "Archived" };
+      // Stable keys for the status filter and the dot's modifier class; the
+      // select shows them translated.
+      var statusMap = { 0: "active", 1: "completed", 2: "archived" };
       var now = new Date();
       var todayStr = now.getFullYear() + "-" +
         (now.getMonth() + 1 < 10 ? "0" : "") + (now.getMonth() + 1) + "-" +
@@ -238,14 +248,14 @@ export default {
       var tasks = this.tasks;
 
       return this.projects.map(function (p) {
-        var projectTasks = tasks.filter(function (t) { return t.projectId === p.id; });
+        var projectTasks = tasks.filter(function (task) { return task.projectId === p.id; });
         var doneCount = 0;
-        projectTasks.forEach(function (t) { if (t.done) doneCount++; });
-        var enrichedTasks = projectTasks.map(function (t) {
-          var status = t.done ? "done" : "open";
+        projectTasks.forEach(function (task) { if (task.done) doneCount++; });
+        var enrichedTasks = projectTasks.map(function (task) {
+          var status = task.done ? "done" : "open";
           var dueBucket = "nodue";
-          if (t.duedate) {
-            var due = t.duedate.substring(0, 10);
+          if (task.duedate) {
+            var due = task.duedate.substring(0, 10);
             if (due < todayStr) dueBucket = "overdue";
             else if (due === todayStr) dueBucket = "today";
             else if (due <= weekStr) dueBucket = "nextSevenDays";
@@ -254,7 +264,7 @@ export default {
           return { dueBucket: dueBucket, status: status };
         });
         return Object.assign({}, p, {
-          statusLabel: statusMap[p.status] || "Active",
+          statusKey: statusMap[p.status] || "active",
           tasks: enrichedTasks,
           taskCount: projectTasks.length,
           doneCount: doneCount,
@@ -281,7 +291,7 @@ export default {
       var list = this.enrichedProjects;
       if (this.tabStatusFilter) {
         list = list.filter(function (p) {
-          return p.statusLabel === self.tabStatusFilter;
+          return p.statusKey === self.tabStatusFilter;
         });
       }
       if (this.tabTaskDueFilter) {
@@ -318,11 +328,11 @@ export default {
     completionBands: function () {
       var self = this;
       var defs = [
-        { key: "", label: "All", tone: "", title: "All projects" },
-        { key: "0-25", label: "0\u201325%", tone: "iz-chip--danger", title: "0\u201325% of your tasks done" },
-        { key: "25-50", label: "25\u201350%", tone: "iz-chip--warning", title: "25\u201350% of your tasks done" },
-        { key: "50-75", label: "50\u201375%", tone: "iz-chip--accent", title: "50\u201375% of your tasks done" },
-        { key: "75-100", label: "75\u2013100%", tone: "iz-chip--success", title: "75\u2013100% of your tasks done" },
+        { key: "", label: t("All"), tone: "", title: t("All projects") },
+        { key: "0-25", label: "0\u201325%", tone: "iz-chip--danger", title: t("0–25% of your tasks done") },
+        { key: "25-50", label: "25\u201350%", tone: "iz-chip--warning", title: t("25–50% of your tasks done") },
+        { key: "50-75", label: "50\u201375%", tone: "iz-chip--accent", title: t("50–75% of your tasks done") },
+        { key: "75-100", label: "75\u2013100%", tone: "iz-chip--success", title: t("75–100% of your tasks done") },
       ];
       var pre = this.projectsPreBand;
       return defs.map(function (d) {

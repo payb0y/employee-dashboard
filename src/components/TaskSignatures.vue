@@ -4,44 +4,44 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" />
       </svg>
-      <strong>Signatures</strong>
-      <span class="task-signatures__counts">{{ summary }}</span>
+      <strong>{{ t('Signatures') }}</strong>
+      <span class="task-signatures__counts">{{ t('{parts}', { parts: summary }) }}</span>
       <svg class="task-signatures__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
     </summary>
-    <div class="task-signatures__body" tabindex="0" role="region" aria-label="Signature documents">
+    <div class="task-signatures__body" tabindex="0" role="region" :aria-label="t('Signature documents')">
       <section v-if="signatures.length">
-        <h4 class="iz-label">Awaiting you</h4>
+        <h4 class="iz-label">{{ t('Awaiting you') }}</h4>
         <div v-for="doc in signatures" :key="doc.id" class="task-signatures__row">
           <div class="task-signatures__main">
             <strong>{{ doc.fileName }}</strong>
             <span class="task-signatures__meta">{{ requestedLabel(doc) }}</span>
           </div>
-          <span class="iz-badge iz-badge--warning">Awaiting signature</span>
+          <span class="iz-badge iz-badge--warning">{{ t('Awaiting signature') }}</span>
         </div>
       </section>
       <section v-if="waiting.length">
-        <h4 class="iz-label">Waiting on others</h4>
+        <h4 class="iz-label">{{ t('Waiting on others') }}</h4>
         <div v-for="doc in waiting" :key="doc.id" class="task-signatures__row">
           <div class="task-signatures__main">
             <strong>{{ doc.fileName }}</strong>
             <span v-if="doc.projectName" class="task-signatures__meta">{{ doc.projectName }}</span>
             <div v-if="doc.signers && doc.signers.length" class="task-signatures__signers">
               <span v-for="(signer, index) in doc.signers" :key="index" class="iz-badge" :class="signer.signed ? 'iz-badge--success' : 'iz-badge--muted'">
-                {{ signer.name }} · {{ signer.signed ? 'Signed' : 'Pending' }}
+                {{ signer.signed ? t('{name} · Signed', { name: signer.name }) : signer.name + ' · ' + t('Pending') }}
               </span>
             </div>
           </div>
           <div class="task-signatures__status">
             <span class="iz-badge iz-badge--cat-5">{{ progress(doc) }}</span>
-            <span v-if="doc.daysWaiting != null" class="task-signatures__meta">{{ doc.daysWaiting }}{{ doc.daysWaiting === 1 ? ' day' : ' days' }}</span>
+            <span v-if="doc.daysWaiting != null" class="task-signatures__meta">{{ n('%n day', '%n days', doc.daysWaiting) }}</span>
           </div>
         </div>
       </section>
       <section v-if="drafts.length">
-        <h4 class="iz-label">Not sent yet</h4>
+        <h4 class="iz-label">{{ t('Not sent yet') }}</h4>
         <div v-for="doc in drafts" :key="doc.id" class="task-signatures__row">
           <div class="task-signatures__main"><strong>{{ doc.fileName }}</strong><span v-if="doc.projectName" class="task-signatures__meta">{{ doc.projectName }}</span></div>
-          <span class="iz-badge iz-badge--muted">Draft</span>
+          <span class="iz-badge iz-badge--muted">{{ t('Draft') }}</span>
         </div>
       </section>
     </div>
@@ -49,6 +49,8 @@
 </template>
 
 <script>
+import { t, n, locale } from "../lib/l10n.mjs";
+
 export default {
   name: "TaskSignatures",
   props: {
@@ -63,23 +65,26 @@ export default {
     drafts: function () { return this.documents.filter(function (doc) { return doc.status === 0; }); },
     summary: function () {
       var parts = [];
-      if (this.signatures.length) parts.push(this.signatures.length + " awaiting you");
-      if (this.waiting.length) parts.push(this.waiting.length + " waiting on others");
-      if (this.drafts.length) parts.push(this.drafts.length + (this.drafts.length === 1 ? " draft" : " drafts"));
+      if (this.signatures.length) parts.push(t("{n} awaiting you", { n: this.signatures.length }));
+      if (this.waiting.length) parts.push(t("{n} waiting on others", { n: this.waiting.length }));
+      if (this.drafts.length) parts.push(n("%n draft", "%n drafts", this.drafts.length));
       return parts.join(" · ");
     },
   },
   methods: {
     progress: function (doc) {
       var signers = doc.signers || [];
-      return signers.filter(function (signer) { return !!signer.signed; }).length + " of " + signers.length + " signed";
+      var signed = signers.filter(function (signer) { return !!signer.signed; }).length;
+      return t("{signed} of {total} signed", { signed: signed, total: signers.length });
     },
     requestedLabel: function (doc) {
-      var parts = [];
-      if (doc.requestedBy) parts.push("Requested by " + doc.requestedBy);
       var date = doc.createdAt ? new Date(doc.createdAt) : null;
-      if (date && !isNaN(date.getTime())) parts.push(date.toLocaleDateString(undefined, { day: "numeric", month: "short" }));
-      return parts.join(" · ");
+      var day = date && !isNaN(date.getTime())
+        ? date.toLocaleDateString(locale(), { day: "numeric", month: "short" })
+        : "";
+      if (doc.requestedBy && day) return t("Requested by {name} · {date}", { name: doc.requestedBy, date: day });
+      if (doc.requestedBy) return t("Requested by {name}", { name: doc.requestedBy });
+      return day;
     },
   },
 };

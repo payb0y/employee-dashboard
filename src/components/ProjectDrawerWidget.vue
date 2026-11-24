@@ -6,7 +6,7 @@
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        Project Detail
+        {{ t('Project Detail') }}
       </h3>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="project-drawer__chevron" :class="{ 'project-drawer__chevron--rotated': collapsed }">
         <polyline points="18 15 12 9 6 15" />
@@ -14,7 +14,7 @@
     </div>
     <div v-show="!collapsed" class="project-drawer__body">
       <p v-if="!project" class="project-drawer__placeholder">
-        Select a project from My Projects to view details here.
+        {{ t('Select a project from My Projects to view details here.') }}
       </p>
 
       <template v-else>
@@ -27,22 +27,22 @@
         <!-- Meta grid -->
         <div class="project-drawer__meta-grid">
           <div v-if="project.number" class="project-drawer__meta-item">
-            <span class="project-drawer__meta-label">Project Number</span>
-            <span class="project-drawer__meta-value">#{{ project.number }}</span>
+            <span class="project-drawer__meta-label">{{ t('Project Number') }}</span>
+            <span class="project-drawer__meta-value">{{ t('#{number}', { number: project.number }) }}</span>
           </div>
           <div v-if="project.clientName" class="project-drawer__meta-item">
-            <span class="project-drawer__meta-label">Client</span>
+            <span class="project-drawer__meta-label">{{ t('Client') }}</span>
             <span class="project-drawer__meta-value">{{ project.clientName }}</span>
           </div>
           <div v-if="project.createdAt" class="project-drawer__meta-item">
-            <span class="project-drawer__meta-label">Created</span>
+            <span class="project-drawer__meta-label">{{ t('Created') }}</span>
             <span class="project-drawer__meta-value">{{ formatDate(project.createdAt) }}</span>
           </div>
         </div>
 
         <!-- Description -->
         <div v-if="project.description" class="project-drawer__section">
-          <h5 class="project-drawer__section-title">Description</h5>
+          <h5 class="project-drawer__section-title">{{ t('Description') }}</h5>
           <p class="project-drawer__description">{{ project.description }}</p>
         </div>
 
@@ -50,11 +50,11 @@
         <div class="project-drawer__links">
           <a v-if="project.folderId" :href="folderUrl" class="project-drawer__link" target="_blank" rel="noopener">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            Open Shared Folder
+            {{ t('Open Shared Folder') }}
           </a>
           <a v-if="project.whiteBoardId" :href="whiteboardUrl" class="project-drawer__link" target="_blank" rel="noopener">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-            Open Whiteboard
+            {{ t('Open Whiteboard') }}
           </a>
         </div>
 
@@ -78,14 +78,14 @@
 
         <!-- Tab: Notes -->
         <div v-if="activeTab === 'notes'" class="project-drawer__tab-body">
-          <div v-if="projectNotes.length === 0" class="iz-empty project-drawer__empty-tab">No notes for this project.</div>
+          <div v-if="projectNotes.length === 0" class="iz-empty project-drawer__empty-tab">{{ t('No notes for this project.') }}</div>
 
           <div v-for="note in projectNotes" :key="note.id" class="project-drawer__note-card">
             <div class="project-drawer__note-header">
               <strong class="project-drawer__note-title">{{ note.title }}</strong>
             </div>
             <p v-if="note.content" class="project-drawer__note-content">{{ note.content }}</p>
-            <span class="project-drawer__note-meta">{{ note.userId }} &middot; {{ timeAgo(note.updatedAt || note.createdAt) }}</span>
+            <span class="project-drawer__note-meta">{{ t('{user} · {time}', { user: note.userId, time: timeAgo(note.updatedAt || note.createdAt) }) }}</span>
           </div>
         </div>
 
@@ -103,6 +103,7 @@
 import { generateUrl } from "@nextcloud/router";
 import ProjectTimeline from "./ProjectTimeline.vue";
 import ProjectActivityFeed from "./ProjectActivityFeed.vue";
+import { t, n, locale } from "../lib/l10n.mjs";
 
 export default {
   name: "ProjectDrawerWidget",
@@ -141,13 +142,13 @@ export default {
     projectNotes: function () {
       if (!this.project) return [];
       var pid = this.project.id;
-      return this.notes.filter(function (n) { return n.projectId === pid; });
+      return this.notes.filter(function (note) { return note.projectId === pid; });
     },
     tabs: function () {
       return [
-        { key: "timeline", label: "Timeline" },
-        { key: "notes", label: "Notes", count: this.projectNotes.length },
-        { key: "activity", label: "Activity" },
+        { key: "timeline", label: t("Timeline") },
+        { key: "notes", label: t("Notes"), count: this.projectNotes.length },
+        { key: "activity", label: t("Activity") },
       ];
     },
   },
@@ -161,8 +162,9 @@ export default {
   },
   methods: {
     statusLabel: function (status) {
-      var map = { 0: "Active", 1: "Completed", 2: "Archived" };
-      return map[status] || "Active";
+      if (status === 1) return t("Completed");
+      if (status === 2) return t("Archived");
+      return t("Active");
     },
     statusKey: function (status) {
       var map = { 0: "active", 1: "completed", 2: "archived" };
@@ -171,19 +173,18 @@ export default {
     formatDate: function (iso) {
       if (!iso) return "\u2014";
       var d = new Date(iso);
-      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      return months[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+      return d.toLocaleDateString(locale(), { month: "short", day: "numeric", year: "numeric" });
     },
     timeAgo: function (iso) {
       if (!iso) return "";
       var now = new Date();
       var then = new Date(iso);
       var diff = Math.floor((now - then) / 1000);
-      if (diff < 60) return "just now";
-      if (diff < 3600) return Math.floor(diff / 60) + "m ago";
-      if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+      if (diff < 60) return t("just now");
+      if (diff < 3600) return t("{n}m ago", { n: Math.floor(diff / 60) });
+      if (diff < 86400) return t("{n}h ago", { n: Math.floor(diff / 3600) });
       var days = Math.floor(diff / 86400);
-      if (days < 30) return days + "d ago";
+      if (days < 30) return n("%nd ago", "%nd ago", days);
       return this.formatDate(iso);
     },
   },

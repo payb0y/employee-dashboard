@@ -7,7 +7,7 @@
           <line x1="8" y1="3" x2="8" y2="18" />
           <line x1="16" y1="6" x2="16" y2="21" />
         </svg>
-        Project locations
+        {{ t('Project locations') }}
         <span class="proj-map__count">{{ projects.length }}</span>
       </h3>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="proj-map__chevron" :class="{ 'proj-map__chevron--rotated': collapsed }">
@@ -16,7 +16,7 @@
     </div>
     <div v-show="!collapsed" class="proj-map__body">
       <div v-if="projects.length === 0" class="proj-map__empty">
-        No project locations available
+        {{ t('No project locations available') }}
       </div>
       <div v-else ref="mapRoot" class="proj-map__container"></div>
     </div>
@@ -26,6 +26,18 @@
 <script>
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { t } from "../lib/l10n.mjs";
+
+// Leaflet renders attribution as HTML. The translated sentence is escaped and
+// only its "OpenStreetMap" becomes the link, wherever the language puts it.
+function osmAttribution() {
+  var text = t("© OpenStreetMap contributors")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return text.replace(
+    "OpenStreetMap",
+    '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>'
+  );
+}
 
 const MARKER_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="#7f1d1d"/></svg>';
 
@@ -95,7 +107,7 @@ export default {
         maxZoom: 19,
         // OSM requires a Referer; override Nextcloud only for tiles, without page paths.
         referrerPolicy: "strict-origin",
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
+        attribution: osmAttribution(),
       }).addTo(this._map);
       this.renderMarkers();
     },
@@ -118,10 +130,9 @@ export default {
           return;
         }
         var marker = L.marker([p.lat, p.lng], { icon: icon });
-        var label = p.name;
-        if (p.number) {
-          label += " (" + p.number + ")";
-        }
+        var label = p.number
+          ? t("{name} ({number})", { name: p.name, number: p.number })
+          : p.name;
         var tooltipNode = document.createElement("span");
         tooltipNode.textContent = label;
         marker.bindTooltip(tooltipNode, { direction: "top", offset: [0, -24] });

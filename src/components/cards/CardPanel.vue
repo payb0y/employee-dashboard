@@ -16,13 +16,15 @@
 </template>
 
 <script>
+import { t } from "../../lib/l10n.mjs";
+
 export default {
   name: "CardPanel",
   props: {
     title: { type: String, required: true },
     // -1 hides the badge entirely; 0 shows the empty state.
     total: { type: Number, default: -1 },
-    empty: { type: String, default: "Nothing here" },
+    empty: { type: String, default: function () { return t("Nothing here"); } },
   },
 };
 </script>

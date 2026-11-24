@@ -15,99 +15,142 @@
  * unfolded those saves are most of a project's history.
  */
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+import { t, locale } from "./l10n.mjs";
 
-export const SOURCES = [
-  { value: "internal", label: "Project" },
-  { value: "deck", label: "Deck" },
-  { value: "files", label: "Files" },
-  { value: "talk", label: "Talk" },
-  { value: "whiteboard", label: "Whiteboard" },
-];
+// The source keys are the API's; only the label is translated.
+const SOURCE_VALUES = ["internal", "deck", "files", "talk", "whiteboard"];
+
+function sourceName(value) {
+  switch (value) {
+    case "internal":
+      return t("Project");
+    case "deck":
+      return t("Deck");
+    case "files":
+      return t("Files");
+    case "talk":
+      return t("Talk");
+    case "whiteboard":
+      return t("Whiteboard");
+    default:
+      return null;
+  }
+}
+
+// `label` is a getter so it is translated when read, after Nextcloud has
+// registered the app's bundle, not when this module loads.
+export const SOURCES = SOURCE_VALUES.map((value) => ({
+  value,
+  get label() {
+    return sourceName(value);
+  },
+}));
 
 export function sourceLabel(source) {
-  const found = SOURCES.find((s) => s.value === source);
-  return found ? found.label : source || "Project";
+  return sourceName(source) || source || t("Project");
 }
 
 // projectcreatoraio's note types (src/constants/note-types.js), as the
 // sentence names them: "created risk / blocker note", plain "note" for general.
-const NOTE_TYPES = {
-  customer: "customer",
-  internal: "internal",
-  decision: "decision",
-  risk_blocker: "risk / blocker",
-  action_point: "action point",
-  technical: "technical",
-  audit: "audit",
-};
-const noteType = (value) => (NOTE_TYPES[value] ? `${NOTE_TYPES[value]} ` : "");
+function noteTypeLabel(value) {
+  switch (value) {
+    case "customer":
+      return t("customer");
+    case "internal":
+      return t("internal");
+    case "decision":
+      return t("decision");
+    case "risk_blocker":
+      return t("risk / blocker");
+    case "action_point":
+      return t("action point");
+    case "technical":
+      return t("technical");
+    case "audit":
+      return t("audit");
+    default:
+      return "";
+  }
+}
+
+/*
+ * A note sentence: 'created {type}note "{title}"' and its siblings.
+ *
+ * English glues the type onto "note" ("created risk / blocker note", or just
+ * "created note" for a general note); Dutch puts it in brackets ("heeft de
+ * notitie ‘X’ (klant) aangemaakt"). {type} is filled with the label between
+ * two markers, then: an empty bracket goes, a label glued to the next word
+ * gets its space, and the markers go. Only the markers are matched, so a
+ * note title is never touched.
+ */
+const TYPE_OPEN = "\u0001";
+const TYPE_CLOSE = "\u0002";
+function noteSentence(sentence, p) {
+  const label = noteTypeLabel(p.noteType);
+  return sentence({ type: TYPE_OPEN + label + TYPE_CLOSE, title: p.title || t("Untitled") })
+    .replace(/\s*\(\u0001\u0002\)/, "")
+    .replace("\u0001\u0002", "")
+    .replace(/\u0001([^\u0002]*)\u0002(?=[^\s)\]}.,;:!?])/, "$1 ")
+    .replace(/\u0001([^\u0002]*)\u0002/, "$1");
+}
 
 function nativeDeck(subject, payload) {
-  const card = `Deck card "${payload.cardTitle || "Untitled"}"`;
-  const board = payload.boardTitle ? `Deck board "${payload.boardTitle}"` : "the Deck board";
-  const stack = `Deck stack "${payload.stackTitle || "Untitled"}"`;
+  const card = t('Deck card "{title}"', { title: payload.cardTitle || t("Untitled") });
+  const board = payload.boardTitle
+    ? t('Deck board "{title}"', { title: payload.boardTitle })
+    : t("the Deck board");
+  const stack = t('Deck stack "{title}"', { title: payload.stackTitle || t("Untitled") });
   switch (subject) {
     case "board_create":
-      return `created ${board}`;
+      return t("created {target}", { target: board });
     case "board_update":
     case "board_update_title":
-      return `updated ${board}`;
+      return t("updated {target}", { target: board });
     case "board_update_archived":
-      return `archived ${board}`;
+      return t("archived {target}", { target: board });
     case "board_delete":
-      return `deleted ${board}`;
+      return t("deleted {target}", { target: board });
     case "board_restore":
-      return `restored ${board}`;
+      return t("restored {target}", { target: board });
     case "board_share":
-      return `shared ${board}`;
+      return t("shared {board}", { board });
     case "board_unshare":
-      return `unshared ${board}`;
+      return t("unshared {board}", { board });
     case "stack_create":
-      return `created ${stack}`;
+      return t("created {target}", { target: stack });
     case "stack_update":
     case "stack_update_title":
     case "stack_update_order":
-      return `updated ${stack}`;
+      return t("updated {target}", { target: stack });
     case "stack_delete":
-      return `deleted ${stack}`;
+      return t("deleted {target}", { target: stack });
     case "card_create":
-      return `created ${card}`;
+      return t("created {target}", { target: card });
     case "card_delete":
-      return `deleted ${card}`;
+      return t("deleted {target}", { target: card });
     case "card_restore":
-      return `restored ${card}`;
+      return t("restored {target}", { target: card });
     case "card_update_title":
-      return `renamed ${card}`;
+      return t("renamed {card}", { card });
     case "card_update_description":
-      return `updated the description of ${card}`;
+      return t("updated the description of {card}", { card });
     case "card_update_duedate":
-      return `updated the due date of ${card}`;
+      return t("updated the due date of {card}", { card });
     case "card_update_archive":
-      return `archived ${card}`;
+      return t("archived {target}", { target: card });
     case "card_update_unarchive":
-      return `unarchived ${card}`;
+      return t("unarchived {card}", { card });
     case "card_update_done":
-      return `marked ${card} as done`;
+      return t("marked {card} as done", { card });
     case "card_update_undone":
-      return `marked ${card} as not done`;
+      return t("marked {card} as not done", { card });
     case "card_update_stackId":
-      return `moved ${card} to "${payload.stackTitle || "another stack"}"`;
+      return t('moved {card} to "{stack}"', {
+        card,
+        stack: payload.stackTitle || t("another stack"),
+      });
     default:
-      return `updated ${card}`;
+      return t("updated {target}", { target: card });
   }
 }
 
@@ -117,103 +160,126 @@ export function describe(event) {
   if (p.redacted === true) {
     // The server's redaction: a direct chat between two other people, or
     // someone else's private note.
-    if (p.isDirectChat) return "started a direct chat";
-    return `${type.replace("note_", "")} a private note`;
+    if (p.isDirectChat) return t("started a direct chat");
+    if (type === "note_created") return t("created a private note");
+    if (type === "note_deleted") return t("deleted a private note");
+    return t("updated a private note");
   }
   if (p.nativeActivity === true) return nativeDeck(p.nativeSubject, p);
 
+  const someone = () => t("someone");
+  const aFile = () => t("a file");
+  const untitled = () => t("Untitled");
   switch (type) {
     case "project_created":
-      return "created the project";
+      return t("created the project");
     case "project_updated":
-      return `updated the project (${(p.changedFields || []).join(", ") || "details"})`;
+      return t("updated the project ({fields})", {
+        fields: (p.changedFields || []).join(", ") || t("details"),
+      });
     case "project_archived":
-      return "archived the project";
+      return t("archived the project");
     case "project_restored":
-      return "restored the project";
+      return t("restored the project");
     case "member_added":
-      return `added ${p.memberDisplayName || p.memberUid || "a member"}`;
+      return t("added {member}", { member: p.memberDisplayName || p.memberUid || t("a member") });
     case "member_removed":
-      return `removed ${p.memberDisplayName || p.memberUid || "a member"}`;
+      return t("removed {member}", { member: p.memberDisplayName || p.memberUid || t("a member") });
     case "note_created":
-      return `created ${noteType(p.noteType)}note "${p.title || "Untitled"}"`;
+      return noteSentence((vars) => t('created {type}note "{title}"', vars), p);
     case "note_updated":
-      return `updated ${noteType(p.noteType)}note "${p.title || "Untitled"}"`;
+      return noteSentence((vars) => t('updated {type}note "{title}"', vars), p);
     case "note_deleted":
-      return `deleted ${noteType(p.noteType)}note "${p.title || "Untitled"}"`;
+      return noteSentence((vars) => t('deleted {type}note "{title}"', vars), p);
     case "project_notes_updated":
-      return "updated project notes";
+      return t("updated project notes");
     case "timeline_item_created":
-      return `created timeline item "${p.label || "Untitled"}"`;
+      return t('created timeline item "{label}"', { label: p.label || untitled() });
     case "timeline_item_updated":
-      return `updated timeline item "${p.label || "Untitled"}"`;
+      return t('updated timeline item "{label}"', { label: p.label || untitled() });
     case "timeline_item_deleted":
-      return `deleted timeline item "${p.label || "Untitled"}"`;
+      return t('deleted timeline item "{label}"', { label: p.label || untitled() });
     case "timeline_reordered":
-      return "reordered timeline items";
+      return t("reordered timeline items");
 
     case "deck_card_created":
-      return `created Deck card "${p.cardTitle || "Untitled"}"`;
+      return t('created Deck card "{title}"', { title: p.cardTitle || untitled() });
     case "deck_card_updated":
-      return `updated Deck card "${p.cardTitle || "Untitled"}"`;
+      return t('updated Deck card "{title}"', { title: p.cardTitle || untitled() });
     case "deck_card_deleted":
-      return `deleted Deck card "${p.cardTitle || "Untitled"}"`;
+      return t('deleted Deck card "{title}"', { title: p.cardTitle || untitled() });
     case "deck_acl_added":
-      return `added ${p.participant || "someone"} to the Deck board`;
+      return t("added {participant} to the Deck board", { participant: p.participant || someone() });
     case "deck_acl_removed":
-      return `removed ${p.participant || "someone"} from the Deck board`;
+      return t("removed {participant} from the Deck board", {
+        participant: p.participant || someone(),
+      });
     case "deck_acl_updated":
-      return `updated access for ${p.participant || "someone"} on the Deck board`;
+      return t("updated access for {participant} on the Deck board", {
+        participant: p.participant || someone(),
+      });
     case "deck_board_created":
-      return "created the Deck board";
+      return t("created the Deck board");
     case "deck_board_updated":
-      return "updated the Deck board";
+      return t("updated the Deck board");
     case "deck_board_deleted":
-      return "deleted the Deck board";
+      return t("deleted the Deck board");
 
     case "file_created":
-      return `created "${p.fileName || "a file"}"`;
+      return t('created "{file}"', { file: p.fileName || aFile() });
     case "file_updated":
-      return `updated "${p.fileName || "a file"}"`;
+      return t('updated "{file}"', { file: p.fileName || aFile() });
     case "file_deleted":
-      return `deleted "${p.fileName || "a file"}"`;
+      return t('deleted "{file}"', { file: p.fileName || aFile() });
     case "file_renamed":
-      return `renamed "${p.oldName || "a file"}" to "${p.newName || "new name"}"`;
+      return t('renamed "{old}" to "{new}"', {
+        old: p.oldName || aFile(),
+        new: p.newName || t("new name"),
+      });
     case "file_moved":
-      return `moved "${p.fileName || "a file"}"`;
+      return t('moved "{file}"', { file: p.fileName || aFile() });
     case "file_copied":
-      return `copied "${p.fileName || "a file"}"`;
+      return t('copied "{file}"', { file: p.fileName || aFile() });
     case "folder_created":
-      return `created folder "${p.folderName || "Untitled"}"`;
+      return t('created folder "{folder}"', { folder: p.folderName || untitled() });
     case "folder_deleted":
-      return `deleted folder "${p.folderName || "a folder"}"`;
+      return t('deleted folder "{folder}"', { folder: p.folderName || t("a folder") });
 
     case "talk_message_sent":
-      return `sent a Talk message${p.messagePreview ? ': "' + p.messagePreview + '"' : ""}`;
+      return p.messagePreview
+        ? t('sent a Talk message: "{preview}"', { preview: p.messagePreview })
+        : t("sent a Talk message");
     case "talk_participant_added":
-      return `added ${p.participantDisplayName || p.participantUid || "someone"} to Talk`;
+      return t("added {participant} to Talk", {
+        participant: p.participantDisplayName || p.participantUid || someone(),
+      });
     case "talk_participant_removed":
-      return `removed ${p.participantDisplayName || p.participantUid || "someone"} from Talk`;
+      return t("removed {participant} from Talk", {
+        participant: p.participantDisplayName || p.participantUid || someone(),
+      });
     case "talk_call_started":
-      return "started a call";
+      return t("started a call");
     case "talk_call_ended":
-      return "ended a call";
+      return t("ended a call");
     case "talk_room_updated":
-      return "updated the Talk conversation";
+      return t("updated the Talk conversation");
     case "talk_reaction_added":
-      return `reacted with ${p.reaction || ""} to a message`;
+      return t("reacted with {reaction} to a message", { reaction: p.reaction || "" });
     case "talk_reaction_removed":
-      return `removed reaction ${p.reaction || ""} from a message`;
+      return t("removed reaction {reaction} from a message", { reaction: p.reaction || "" });
     case "talk_user_joined":
-      return "joined the Talk conversation";
+      return t("joined the Talk conversation");
     case "talk_direct_chat_created":
-      return `started a direct chat with ${p.targetDisplayName || p.targetUserId || "someone"}`;
+      return t("started a direct chat with {participant}", {
+        participant: p.targetDisplayName || p.targetUserId || someone(),
+      });
 
     case "whiteboard_updated":
-      return "updated the whiteboard";
+      return t("updated the whiteboard");
 
     default:
-      return type.replace(/_/g, " ");
+      // An event type this port doesn't know yet, shown as its own words.
+      return t("{event type}", { "event type": type.replace(/_/g, " ") });
   }
 }
 
@@ -243,7 +309,7 @@ export function foldKey(event) {
 }
 
 // The viewer's calendar day and clock, as projectcreatoraio shows them.
-const pad2 = (n) => String(n).padStart(2, "0");
+const pad2 = (value) => String(value).padStart(2, "0");
 export function localDay(value) {
   const d = new Date(value);
   return Number.isNaN(d.getTime())
@@ -258,10 +324,18 @@ export function dayLabel(day, now = new Date()) {
   const today = localDay(now);
   const y = new Date(now);
   y.setDate(y.getDate() - 1);
-  if (day === today) return "Today";
-  if (day === localDay(y)) return "Yesterday";
+  if (day === today) return t("Today");
+  if (day === localDay(y)) return t("Yesterday");
+  return longDate(day);
+}
+
+// "17 October 2026" / "17 oktober 2026": the month's name from Intl in the
+// user's locale, the order from the translation.
+function longDate(day) {
+  if (!day) return "";
   const [yy, mm, dd] = day.split("-").map(Number);
-  return `${dd} ${MONTHS[mm - 1]} ${yy}`;
+  const month = new Intl.DateTimeFormat(locale(), { month: "long" }).format(new Date(yy, mm - 1, 1));
+  return t("{day} {month} {year}", { day: dd, month, year: yy });
 }
 
 /**
@@ -295,7 +369,7 @@ export function buildFeed(events, { fold = true, now = new Date() } = {}) {
       group.lines.push({
         id: `${day}-${event.id}`,
         actorUid: event.actorUid || null,
-        actorName: event.actorDisplayName || event.actorUid || "Unknown user",
+        actorName: event.actorDisplayName || event.actorUid || t("Unknown user"),
         text: describe(event),
         source: event.source || "internal",
         sourceLabel: sourceLabel(event.source),
@@ -310,13 +384,11 @@ export function buildFeed(events, { fold = true, now = new Date() } = {}) {
 }
 
 export function lineCount(events, fold) {
-  return buildFeed(events, { fold }).reduce((n, day) => n + day.lines.length, 0);
+  return buildFeed(events, { fold }).reduce((total, day) => total + day.lines.length, 0);
 }
 
 // "24 August 2026" — how far back the loaded activity reaches.
 export function oldestLabel(events) {
   if (!events || !events.length) return "";
-  const day = localDay(events[events.length - 1].occurredAt);
-  const [yy, mm, dd] = day.split("-").map(Number);
-  return `${dd} ${MONTHS[mm - 1]} ${yy}`;
+  return longDate(localDay(events[events.length - 1].occurredAt));
 }

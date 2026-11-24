@@ -40,6 +40,7 @@
 
 <script>
 import CardPanel from "./CardPanel.vue";
+import { t, locale } from "../../lib/l10n.mjs";
 
 export default {
   name: "TasksPanel",
@@ -47,7 +48,7 @@ export default {
   props: {
     title: { type: String, required: true },
     tasks: { type: Array, default: function () { return []; } },
-    empty: { type: String, default: "No cards" },
+    empty: { type: String, default: function () { return t("No cards"); } },
     // Only the Upcoming panel sets this. Narrowing by range is a view concern
     // local to that panel — every other filter lives in CardsView.
     ranges: { type: Boolean, default: false },
@@ -60,22 +61,24 @@ export default {
       // invisible in every panel: not overdue, not today, not tomorrow, and
       // filtered out of upcoming.
       activeRange: null,
-      rangeOptions: [
-        { days: 7, label: "7d" },
-        { days: 30, label: "30d" },
-        { days: 90, label: "90d" },
-        { days: null, label: "All" },
-      ],
     };
   },
   computed: {
+    rangeOptions: function () {
+      return [
+        { days: 7, label: t("7d") },
+        { days: 30, label: t("30d") },
+        { days: 90, label: t("90d") },
+        { days: null, label: t("All") },
+      ];
+    },
     visible: function () {
       if (!this.ranges || this.activeRange === null) return this.tasks;
       var limit = new Date();
       limit.setDate(limit.getDate() + this.activeRange);
       limit.setHours(23, 59, 59, 999);
-      return this.tasks.filter(function (t) {
-        return t.duedate && new Date(t.duedate) <= limit;
+      return this.tasks.filter(function (task) {
+        return task.duedate && new Date(task.duedate) <= limit;
       });
     },
   },
@@ -83,7 +86,7 @@ export default {
     shortDate: function (value) {
       var d = new Date(value);
       if (isNaN(d.getTime())) return "";
-      return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+      return d.toLocaleDateString(locale(), { day: "numeric", month: "short" });
     },
   },
 };

@@ -13,10 +13,9 @@
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
       </div>
-      <h2 class="emp-dashboard__empty-title">No Organization Found</h2>
+      <h2 class="emp-dashboard__empty-title">{{ t('No Organization Found') }}</h2>
       <p class="emp-dashboard__empty-text">
-        Your account is not associated with any organization.<br />
-        Please contact your administrator.
+        {{ t('Your account is not associated with any organization. Please contact your administrator.') }}
       </p>
     </div>
 
@@ -272,6 +271,7 @@ export default {
       var self = this;
       var task = this.filteredTasks.find(function (t) { return t.id === taskId; });
       if (!task) return;
+      // Tab ids, not labels: TasksBoardWidget translates them for display.
       var tab = task.done ? "Done" : "All Open";
       this.focusFilter = { tab: tab, taskId: taskId, ts: Date.now() };
       // The tasks board only exists in the overview, so a card-view click has

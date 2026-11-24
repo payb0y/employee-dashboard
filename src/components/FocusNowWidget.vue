@@ -7,35 +7,35 @@
           <polyline points="12 6 12 12 16 14" />
         </svg>
       </div>
-      <span class="focus-widget__title">Focus Now</span>
+      <span class="focus-widget__title">{{ t('Focus Now') }}</span>
     </div>
     <div class="focus-widget__body">
       <div class="focus-widget__stats">
         <div class="focus-widget__stat focus-widget__stat--danger focus-widget__stat--clickable" @click="$emit('filter', 'Overdue')">
           <span class="focus-widget__stat-value">{{ focus.overdue }}</span>
-          <span class="focus-widget__stat-label">Overdue</span>
+          <span class="focus-widget__stat-label">{{ t('Overdue') }}</span>
         </div>
         <div class="focus-widget__stat focus-widget__stat--warning focus-widget__stat--clickable" @click="$emit('filter', 'Today')">
           <span class="focus-widget__stat-value">{{ focus.dueToday }}</span>
-          <span class="focus-widget__stat-label">Due Today</span>
+          <span class="focus-widget__stat-label">{{ t('Due Today') }}</span>
         </div>
       </div>
       <div class="focus-widget__next" :class="{ 'focus-widget__row--clickable': focus.nextTask }" @click="focus.nextTask && $emit('select-task', focus.nextTask.id)">
-        <span class="focus-widget__next-label">Next Task</span>
+        <span class="focus-widget__next-label">{{ t('Next Task') }}</span>
         <span class="focus-widget__next-value">
-          {{ focus.nextTask ? focus.nextTask.title : '— none —' }}
+          {{ focus.nextTask ? focus.nextTask.title : t('— none —') }}
         </span>
       </div>
       <div class="focus-widget__oldest" :class="{ 'focus-widget__row--clickable': focus.oldestTask }" @click="focus.oldestTask && $emit('select-task', focus.oldestTask.id)">
-        <span class="focus-widget__oldest-label">Oldest Open</span>
+        <span class="focus-widget__oldest-label">{{ t('Oldest Open') }}</span>
         <span class="focus-widget__oldest-value">
-          {{ focus.oldestTask ? focus.oldestTask.title : '— none —' }}
+          {{ focus.oldestTask ? focus.oldestTask.title : t('— none —') }}
         </span>
       </div>
       <div class="focus-widget__actions">
-        <button class="focus-widget__btn" @click="$emit('filter', 'Overdue')">Show overdue</button>
-        <button class="focus-widget__btn" @click="$emit('filter', 'Today')">Show today</button>
-        <button class="focus-widget__btn" @click="$emit('filter', 'All Open')">Show all open</button>
+        <button class="focus-widget__btn" @click="$emit('filter', 'Overdue')">{{ t('Show overdue') }}</button>
+        <button class="focus-widget__btn" @click="$emit('filter', 'Today')">{{ t('Show today') }}</button>
+        <button class="focus-widget__btn" @click="$emit('filter', 'All Open')">{{ t('Show all open') }}</button>
       </div>
 
       <div v-if="showEventsSection" class="focus-widget__events">
@@ -46,11 +46,11 @@
             <line x1="8" y1="2" x2="8" y2="6" />
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
-          <span>Upcoming meetings</span>
+          <span>{{ t('Upcoming meetings') }}</span>
         </div>
 
         <div v-if="(focus.remainingToday || 0) === 0" class="focus-widget__events-empty">
-          No more meetings today
+          {{ t('No more meetings today') }}
         </div>
 
         <ul class="focus-widget__events-list">
@@ -71,6 +71,8 @@
 </template>
 
 <script>
+import { t } from "../lib/l10n.mjs";
+
 export default {
   name: "FocusNowWidget",
   props: {
@@ -104,13 +106,13 @@ export default {
       var diffDays = Math.round((startMid - nowMid) / 86400000);
 
       if (diffDays <= 0) {
-        if (allDay) { return "today"; }
+        if (allDay) { return t("today"); }
         var hh = String(start.getHours()).padStart(2, "0");
         var mm = String(start.getMinutes()).padStart(2, "0");
-        return "today " + hh + ":" + mm;
+        return t("today {time}", { time: hh + ":" + mm });
       }
-      if (diffDays === 1) { return "tomorrow"; }
-      return "in " + diffDays + " days";
+      if (diffDays === 1) { return t("tomorrow"); }
+      return t("in {n} days", { n: diffDays });
     },
     openCalendar: function () {
       window.open("/index.php/apps/calendar", "_blank", "noopener");

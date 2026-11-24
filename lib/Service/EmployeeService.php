@@ -8,6 +8,7 @@ use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use OCP\IConfig;
 use OCP\IDBConnection;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 
 class EmployeeService {
@@ -22,19 +23,22 @@ class EmployeeService {
     private IClientService $clientService;
     private IAppManager $appManager;
     private LoggerInterface $logger;
+    private IL10N $l;
 
     public function __construct(
         IDBConnection $db,
         IConfig $config,
         IClientService $clientService,
         IAppManager $appManager,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        IL10N $l
     ) {
         $this->db            = $db;
         $this->config        = $config;
         $this->clientService = $clientService;
         $this->appManager    = $appManager;
         $this->logger        = $logger;
+        $this->l             = $l;
     }
 
     public function getDashboardData(string $uid): array {
@@ -1000,7 +1004,7 @@ class EmployeeService {
 
         $summary = isset($bestEvent->SUMMARY) ? trim((string)$bestEvent->SUMMARY) : '';
         if ($summary === '') {
-            $summary = '(untitled event)';
+            $summary = $this->l->t('(untitled event)');
         }
 
         $allDay  = false;

@@ -4,7 +4,7 @@
        from projectcreatoraio's own API, plus folding of repeated updates. -->
   <div class="paf">
     <div class="paf__filters">
-      <div class="paf__chips" role="group" aria-label="Filter by source">
+      <div class="paf__chips" role="group" :aria-label="t('Filter by source')">
         <button
           v-for="option in sourceOptions"
           :key="'source-' + option.value"
@@ -20,17 +20,17 @@
       </div>
       <label class="paf__fold">
         <input v-model="fold" type="checkbox" />
-        Fold repeated updates
+        {{ t('Fold repeated updates') }}
       </label>
     </div>
 
-    <div v-if="loading && !events.length" class="paf__state" role="status">Loading activity…</div>
+    <div v-if="loading && !events.length" class="paf__state" role="status">{{ t('Loading activity…') }}</div>
     <div v-else-if="error && !events.length" class="paf__state" role="alert">
       <span>{{ error }}</span>
-      <button type="button" class="iz-btn iz-btn--sm" @click="reload">Try again</button>
+      <button type="button" class="iz-btn iz-btn--sm" @click="reload">{{ t('Try again') }}</button>
     </div>
     <div v-else-if="!events.length" class="paf__state">
-      {{ source ? "No activity from this source yet." : "No activity yet." }}
+      {{ source ? t('No activity from this source yet.') : t('No activity yet.') }}
     </div>
 
     <template v-else>
@@ -39,32 +39,32 @@
         <section v-for="day in days" :key="day.day" class="paf__day" :aria-label="day.label">
           <h5 class="paf__day-title">
             {{ day.label }}
-            <span class="paf__day-count">{{ day.eventCount }} {{ day.eventCount === 1 ? "event" : "events" }}</span>
+            <span class="paf__day-count">{{ n('%n event', '%n events', day.eventCount) }}</span>
           </h5>
           <ol class="paf__list">
             <li v-for="line in day.lines" :key="line.id">
               <div class="paf__row">
-                <time class="paf__time" :datetime="line.events[0].occurredAt">{{ line.events.length > 1 ? line.oldest + "–" + line.newest : line.newest }}</time>
+                <time class="paf__time" :datetime="line.events[0].occurredAt">{{ line.events.length > 1 ? t('{oldest}–{newest}', { oldest: line.oldest, newest: line.newest }) : line.newest }}</time>
                 <img v-if="line.actorUid" class="paf__avatar" :src="avatarUrl(line.actorUid)" alt="" width="32" height="32" loading="lazy" />
                 <span v-else class="paf__avatar paf__avatar--none" aria-hidden="true">?</span>
                 <p class="paf__text">
                   <strong>{{ line.actorName }}</strong>{{ " " }}<span>{{ line.text }}</span>
                   <template v-if="line.events.length > 1">
-                    <span class="paf__count">{{ line.events.length }}×</span>
+                    <span class="paf__count">{{ t('{n}×', { n: line.events.length }) }}</span>
                     <button
                       type="button"
                       class="paf__more"
                       :aria-expanded="String(!!open[line.id])"
                       @click="toggle(line.id)"
-                    >{{ open[line.id] ? "Hide" : "Show all" }}</button>
+                    >{{ open[line.id] ? t('Hide') : t('Show all') }}</button>
                   </template>
                 </p>
                 <span class="iz-pill paf__source" :class="sourceTone(line.source)">{{ line.sourceLabel }}</span>
               </div>
-              <ol v-if="line.events.length > 1 && open[line.id]" class="paf__list paf__list--sub" :aria-label="'Each of the ' + line.events.length + ' updates'">
+              <ol v-if="line.events.length > 1 && open[line.id]" class="paf__list paf__list--sub" :aria-label="t('Each of the {n} updates', { n: line.events.length })">
                 <li v-for="item in line.events" :key="item.id" class="paf__sub">
                   <time class="paf__time" :datetime="item.occurredAt">{{ item.time }}</time>
-                  <span class="paf__sub-text">{{ line.actorName }} {{ line.text }}</span>
+                  <span class="paf__sub-text">{{ t('{actor} {text}', { actor: line.actorName, text: line.text }) }}</span>
                 </li>
               </ol>
             </li>
@@ -73,12 +73,12 @@
       </div>
 
       <div class="iz-pagination paf__footer">
-        <span>Showing {{ events.length }} {{ events.length === 1 ? "event" : "events" }}, back to {{ oldest }}</span>
+        <span>{{ n('Showing %n event, back to {date}', 'Showing %n events, back to {date}', events.length, { date: oldest }) }}</span>
         <span v-if="error" class="paf__footer-error" role="alert">{{ error }}</span>
         <button v-if="hasMore" type="button" class="iz-btn" :disabled="loading" @click="loadOlder">
-          {{ loading ? "Loading…" : "Load older activity" }}
+          {{ loading ? t('Loading…') : t('Load older activity') }}
         </button>
-        <span v-else class="paf__start">Start of this project's activity</span>
+        <span v-else class="paf__start">{{ t("Start of this project's activity") }}</span>
       </div>
     </template>
   </div>
@@ -88,6 +88,7 @@
 import axios from "@nextcloud/axios";
 import { generateUrl } from "@nextcloud/router";
 import { SOURCES, buildFeed, lineCount, oldestLabel } from "../lib/activityFeed.mjs";
+import { t } from "../lib/l10n.mjs";
 
 // The API's largest page.
 var PAGE = 100;
@@ -132,7 +133,7 @@ export default {
   },
   computed: {
     sourceOptions: function () {
-      return [{ value: "", label: "All sources" }].concat(
+      return [{ value: "", label: t("All sources") }].concat(
         SOURCES.map(function (s) {
           return { value: s.value, label: s.label, toneClass: DOT_TONES[s.value] };
         })
@@ -210,10 +211,10 @@ export default {
         var status = e && e.response ? e.response.status : 0;
         this.error =
           status === 403 || status === 404
-            ? "This project's activity isn't available here."
+            ? t("This project's activity isn't available here.")
             : this.events.length
-              ? "Older activity could not be loaded. Try again."
-              : "Activity could not be loaded.";
+              ? t("Older activity could not be loaded. Try again.")
+              : t("Activity could not be loaded.");
       } finally {
         if (request === this.request) this.loading = false;
       }

@@ -6,23 +6,23 @@
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
         </svg>
       </div>
-      <span class="workload-widget__title">Workload</span>
+      <span class="workload-widget__title">{{ t('Workload') }}</span>
     </div>
     <div class="workload-widget__body">
       <div class="workload-widget__row workload-widget__row--clickable" @click="$emit('filter', 'All Open')">
-        <span class="workload-widget__label">Open</span>
+        <span class="workload-widget__label">{{ tc('Open', 'status') }}</span>
         <span class="workload-widget__value">{{ workload.open }}</span>
       </div>
       <div class="workload-widget__row workload-widget__row--clickable" @click="$emit('filter', 'Done')">
-        <span class="workload-widget__label">Done</span>
+        <span class="workload-widget__label">{{ t('Done') }}</span>
         <span class="workload-widget__value">{{ workload.done }}</span>
       </div>
       <div class="workload-widget__row">
-        <span class="workload-widget__label">Completion</span>
-        <span class="workload-widget__value">{{ workload.completionPct }}%</span>
+        <span class="workload-widget__label">{{ t('Completion') }}</span>
+        <span class="workload-widget__value">{{ t('{pct}%', { pct: workload.completionPct }) }}</span>
       </div>
       <div class="workload-widget__row">
-        <span class="workload-widget__label">Projects</span>
+        <span class="workload-widget__label">{{ t('Projects') }}</span>
         <span class="workload-widget__value">{{ workload.activeProjects }}</span>
       </div>
     </div>

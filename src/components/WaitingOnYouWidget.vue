@@ -9,7 +9,7 @@
           <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8" />
         </svg>
       </div>
-      <span class="waiting-widget__title">Talk mentions</span>
+      <span class="waiting-widget__title">{{ t('Talk mentions') }}</span>
       <span class="iz-badge iz-badge--warning waiting-widget__count">{{ total }}</span>
     </div>
 
@@ -19,7 +19,7 @@
           <svg class="waiting-widget__group-icon waiting-widget__group-icon--talk" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-6a8 8 0 0 1 8-8h2a8 8 0 0 1 8 3Z" />
           </svg>
-          <span class="waiting-widget__group-name">Talk mentions</span>
+          <span class="waiting-widget__group-name">{{ t('Talk mentions') }}</span>
           <span class="waiting-widget__group-n">{{ mentions.length }}</span>
         </div>
         <a
@@ -29,14 +29,14 @@
           :href="roomUrl(m.token)"
         >
           <span class="waiting-widget__row-title">{{ m.name }}</span>
-          <span class="waiting-widget__row-meta">You were mentioned</span>
+          <span class="waiting-widget__row-meta">{{ t('You were mentioned') }}</span>
         </a>
         <button
           v-if="mentions.length > limit"
           type="button"
           class="waiting-widget__more"
           @click="$emit('switch-view', 'cards')"
-        >+{{ mentions.length - limit }} more in Cards</button>
+        >{{ t('+{n} more in Cards', { n: mentions.length - limit }) }}</button>
       </div>
 
     </div>

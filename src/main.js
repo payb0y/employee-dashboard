@@ -2,6 +2,7 @@ import Vue from "vue";
 import Dashboard from "./components/Dashboard.vue";
 import axios from "@nextcloud/axios";
 import { generateUrl, generateFilePath } from "@nextcloud/router";
+import { t, n, tc } from "./lib/l10n.mjs";
 
 /*
  * Where webpack fetches lazily-loaded chunks from.
@@ -15,10 +16,10 @@ import { generateUrl, generateFilePath } from "@nextcloud/router";
  */
 __webpack_public_path__ = generateFilePath("employee_dashboard", "", "js/");
 
+// t() and n() in every template, the same functions .js/.mjs files import
+// from ./lib/l10n.mjs. Nextcloud registers l10n/<lang>.js before this bundle.
 Vue.mixin({
-  methods: {
-    t: (app, text) => text,
-  },
+  methods: { t, n, tc },
 });
 
 const mountEl = document.getElementById("employee-dashboard-root");
@@ -37,12 +38,12 @@ if (mountEl) {
       if (this.loading) {
         return h("div", { class: "emp-loading" }, [
           h("div", { class: "emp-loading__spinner" }),
-          h("p", "Loading your dashboard..."),
+          h("p", t("Loading your dashboard...")),
         ]);
       }
       if (this.error) {
         return h("div", { class: "emp-error" }, [
-          h("p", "Error loading data: " + this.error),
+          h("p", t("Error loading data: {error}", { error: this.error })),
         ]);
       }
       return h(Dashboard, {
@@ -63,7 +64,7 @@ if (mountEl) {
           this.dashboardData = response.data;
         } catch (e) {
           console.error("Failed to load employee dashboard data", e);
-          this.error = e.message || "Unknown error";
+          this.error = e.message || t("Unknown error");
         } finally {
           this.loading = false;
         }

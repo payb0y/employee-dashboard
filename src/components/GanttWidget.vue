@@ -10,8 +10,8 @@
           <line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" />
           <line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" />
         </svg>
-        Project Timeline
-        <span v-if="gantt.hasContent" class="gantt-widget__count">{{ gantt.projects.length }} {{ gantt.projects.length === 1 ? "project" : "projects" }}</span>
+        {{ t("Project Timeline") }}
+        <span v-if="gantt.hasContent" class="gantt-widget__count">{{ n("%n project", "%n projects", gantt.projects.length) }}</span>
       </h3>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="gantt-widget__chevron" :class="{ 'gantt-widget__chevron--rotated': collapsed }">
         <polyline points="18 15 12 9 6 15" />
@@ -19,35 +19,35 @@
     </div>
 
     <div v-show="!collapsed" class="gantt-widget__body">
-      <div v-if="loading && !loaded" class="iz-empty">Loading the project timelines…</div>
+      <div v-if="loading && !loaded" class="iz-empty">{{ t("Loading the project timelines…") }}</div>
       <div v-else-if="error" class="iz-empty gantt-widget__state">
         <span>{{ error }}</span>
-        <button type="button" class="iz-btn iz-btn--sm" @click="load">Try again</button>
+        <button type="button" class="iz-btn iz-btn--sm" @click="load">{{ t("Try again") }}</button>
       </div>
-      <div v-else-if="!gantt.hasContent" class="iz-empty">No project timelines yet.</div>
+      <div v-else-if="!gantt.hasContent" class="iz-empty">{{ t("No project timelines yet.") }}</div>
 
       <div v-else class="ptl__planner">
         <div class="ptl__toolbar">
-          <span v-if="anyDelays" class="ptl__delays" title="Schedule slippage detected">
+          <span v-if="anyDelays" class="ptl__delays" :title="t('Schedule slippage detected')">
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" /></svg>
-            Delays Detected
+            {{ t("Delays Detected") }}
           </span>
           <div class="ptl__controls">
             <div class="ptl__control-group">
-              <button type="button" class="ptl__control" aria-label="Previous" @click="scrollBy(-30 * dayWidth)">
+              <button type="button" class="ptl__control" :aria-label="t('Previous')" @click="scrollBy(-30 * dayWidth)">
                 <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" /></svg>
               </button>
-              <button type="button" class="ptl__control ptl__control--today" @click="navigateToday">Today</button>
-              <button type="button" class="ptl__control" aria-label="Next" @click="scrollBy(30 * dayWidth)">
+              <button type="button" class="ptl__control ptl__control--today" @click="navigateToday">{{ t("Today") }}</button>
+              <button type="button" class="ptl__control" :aria-label="t('Next')" @click="scrollBy(30 * dayWidth)">
                 <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
               </button>
             </div>
             <div class="ptl__control-group">
-              <button type="button" class="ptl__control" title="Zoom out" aria-label="Zoom out" @click="zoom(-1)">
+              <button type="button" class="ptl__control" :title="t('Zoom out')" :aria-label="t('Zoom out')" @click="zoom(-1)">
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5,14H14.71L14.43,13.73C15.41,12.59 16,11.11 16,9.5A6.5,6.5 0 0,0 9.5,3A6.5,6.5 0 0,0 3,9.5A6.5,6.5 0 0,0 9.5,16C11.11,16 12.59,15.41 13.73,14.43L14,14.71V15.5L19,20.5L20.5,19L15.5,14M9.5,14C7,14 5,12 5,9.5C5,7 7,5 9.5,5C12,5 14,7 14,9.5C14,12 12,14 9.5,14M7,9H12V10H7V9Z" /></svg>
               </button>
-              <span class="ptl__zoom">{{ dayWidth }}px/d</span>
-              <button type="button" class="ptl__control" title="Zoom in" aria-label="Zoom in" @click="zoom(1)">
+              <span class="ptl__zoom">{{ t("{n}px/d", { n: dayWidth }) }}</span>
+              <button type="button" class="ptl__control" :title="t('Zoom in')" :aria-label="t('Zoom in')" @click="zoom(1)">
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5,14L20.5,19L19,20.5L14,15.5V14.71L13.73,14.43C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.43,13.73L14.71,14H15.5M9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14M12,10H10V12H9V10H7V9H9V7H10V9H12V10Z" /></svg>
               </button>
             </div>
@@ -57,30 +57,30 @@
         <div ref="grid" class="ptl__gantt">
           <!-- Column 1: the rows, named -->
           <div ref="sidebar" class="ptl__sidebar">
-            <div class="ptl__head-cell" :style="{ height: headHeight + 'px' }">Projects</div>
+            <div class="ptl__head-cell" :style="{ height: headHeight + 'px' }">{{ t("Projects") }}</div>
             <template v-for="project in projectRows">
               <div :key="'side-p-' + project.id" class="ptl__side-row ptl__side-row--project">
                 <button
                   type="button"
                   class="ptl__toggle"
                   :aria-expanded="project.open ? 'true' : 'false'"
-                  :aria-label="(project.open ? 'Hide the phases of ' : 'Show the phases of ') + project.name"
+                  :aria-label="project.open ? t('Hide the phases of {name}', { name: project.name }) : t('Show the phases of {name}', { name: project.name })"
                   @click="toggle(project.id)"
                 >
                   <svg v-if="project.open" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" /></svg>
                   <svg v-else aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
                 </button>
                 <span class="ptl__side-name ptl__project-name" :title="project.name">{{ project.name }}</span>
-                <button type="button" class="iz-btn iz-btn--sm gantt-widget__open" @click="$emit('select-project', project.id)">Open</button>
+                <button type="button" class="iz-btn iz-btn--sm gantt-widget__open" @click="$emit('select-project', project.id)">{{ t("Open") }}</button>
               </div>
-              <div v-if="project.system" :key="'side-sp-' + project.id" class="ptl__side-row ptl__side-row--system" title="System Planning (calculated)">
+              <div v-if="project.system" :key="'side-sp-' + project.id" class="ptl__side-row ptl__side-row--system" :title="t('System Planning (calculated)')">
                 <span class="ptl__sp-badge">1</span>
                 <span class="ptl__sp-icon">
                   <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" /></svg>
                 </span>
                 <div class="ptl__side-content">
                   <div class="ptl__side-top">
-                    <span class="ptl__side-name">System Planning</span>
+                    <span class="ptl__side-name">{{ t("System Planning") }}</span>
                     <span class="ptl__duration">{{ project.system.duration }}</span>
                   </div>
                   <div class="ptl__side-dates">{{ project.system.dates }}</div>
@@ -141,7 +141,7 @@
 
                 <div class="ptl__today" :style="{ left: gantt.today.offset * dayWidth + 'px' }">
                   <div class="ptl__today-line"></div>
-                  <div class="ptl__today-badge">Today</div>
+                  <div class="ptl__today-badge">{{ t("Today") }}</div>
                 </div>
 
                 <template v-for="project in projectRows">
@@ -153,7 +153,7 @@
                       class="ptl__sp-bar"
                       :class="'ptl__sp-bar--' + bar.tone"
                       :style="{ left: bar.offset * dayWidth + 'px', width: bar.days * dayWidth + 'px' }"
-                      :title="project.name + ' · ' + bar.title"
+                      :title="t('{project} · {bar}', { project: project.name, bar: bar.title })"
                     >
                       <span v-if="bar.days * dayWidth > (bar.key === 'float' ? 40 : 50)" class="ptl__sp-label">{{ bar.label }}</span>
                     </div>
@@ -163,7 +163,7 @@
                       class="ptl__sp-marker"
                       :class="'ptl__sp-marker--' + marker.key"
                       :style="{ left: marker.offset * dayWidth + 'px' }"
-                      :title="marker.label + ': ' + marker.date"
+                      :title="t('{label}: {date}', { label: marker.label, date: marker.date })"
                     >
                       <div class="ptl__sp-pin">
                         <svg v-if="marker.key === 'min-start'" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 6.46C11.72 6.46 11.44 6.56 11.22 6.78L6.78 11.22C6.35 11.65 6.35 12.35 6.78 12.78L11.22 17.22C11.65 17.65 12.35 17.65 12.78 17.22L17.22 12.78C17.65 12.35 17.65 11.65 17.22 11.22L12.78 6.78C12.56 6.56 12.28 6.46 12 6.46Z" /></svg>
@@ -177,12 +177,12 @@
                       <div class="ptl__sp-guide"></div>
                     </div>
                     <div class="ptl__sp-legend" :style="{ left: Math.max(16, project.system.legendOffset * dayWidth) + 'px' }">
-                      <span class="ptl__sp-legend-item"><i class="ptl__sp-swatch ptl__sp-swatch--deck"></i>Deck tasks</span>
-                      <span class="ptl__sp-legend-item"><i class="ptl__sp-swatch ptl__sp-swatch--prep"></i>Preparation</span>
-                      <span class="ptl__sp-legend-item"><i class="ptl__sp-swatch ptl__sp-swatch--float"></i>Float</span>
-                      <span class="ptl__sp-legend-item"><span class="ptl__sp-icon-key ptl__sp-icon-key--min-start">◆</span>Minimum start</span>
-                      <span v-if="project.system.legend.desired" class="ptl__sp-legend-item"><span class="ptl__sp-icon-key ptl__sp-icon-key--desired-start">▶</span>Desired start</span>
-                      <span v-if="project.system.legend.actual" class="ptl__sp-legend-item"><span class="ptl__sp-icon-key ptl__sp-icon-key--actual-start">⚑</span>Actual start</span>
+                      <span class="ptl__sp-legend-item"><i class="ptl__sp-swatch ptl__sp-swatch--deck"></i>{{ t("Deck tasks") }}</span>
+                      <span class="ptl__sp-legend-item"><i class="ptl__sp-swatch ptl__sp-swatch--prep"></i>{{ t("Preparation") }}</span>
+                      <span class="ptl__sp-legend-item"><i class="ptl__sp-swatch ptl__sp-swatch--float"></i>{{ t("Float") }}</span>
+                      <span class="ptl__sp-legend-item"><span class="ptl__sp-icon-key ptl__sp-icon-key--min-start">◆</span>{{ t("Minimum start") }}</span>
+                      <span v-if="project.system.legend.desired" class="ptl__sp-legend-item"><span class="ptl__sp-icon-key ptl__sp-icon-key--desired-start">▶</span>{{ t("Desired start") }}</span>
+                      <span v-if="project.system.legend.actual" class="ptl__sp-legend-item"><span class="ptl__sp-icon-key ptl__sp-icon-key--actual-start">⚑</span>{{ t("Actual start") }}</span>
                     </div>
                   </div>
                   <template v-if="project.open">
@@ -191,7 +191,7 @@
                         v-if="phase.bar"
                         class="ptl__phase-bar"
                         :style="{ left: phase.bar.offset * dayWidth + 'px', width: phase.bar.days * dayWidth + 'px', borderColor: phase.color, backgroundColor: phase.tint }"
-                        :title="project.name + ' · ' + phase.name + ': ' + phase.dates"
+                        :title="t('{project} · {phase}: {dates}', { project: project.name, phase: phase.name, dates: phase.dates })"
                       >
                         <span v-if="phase.bar.days * dayWidth > 90" class="ptl__phase-bar-label">{{ phase.name }}</span>
                       </div>
@@ -208,7 +208,7 @@
 
           <!-- Column 3: the traffic light -->
           <div class="ptl__status-col">
-            <div class="ptl__head-cell ptl__head-cell--center" :style="{ height: headHeight + 'px' }">Status</div>
+            <div class="ptl__head-cell ptl__head-cell--center" :style="{ height: headHeight + 'px' }">{{ t("Status") }}</div>
             <template v-for="project in projectRows">
               <div :key="'st-p-' + project.id" class="ptl__status-row ptl__status-row--project"></div>
               <div v-if="project.system" :key="'st-sp-' + project.id" class="ptl__status-row ptl__status-row--system">
@@ -231,6 +231,7 @@
 import axios from "@nextcloud/axios";
 import { generateUrl } from "@nextcloud/router";
 import { portfolioGanttOf, ROW_HEIGHT } from "../lib/projectTimeline.mjs";
+import { t } from "../lib/l10n.mjs";
 
 // The Planning tab's zoom steps, px per day, and where it starts.
 var ZOOM_IN = [3, 4, 6, 8, 12, 16];
@@ -327,7 +328,7 @@ export default {
           self.loaded = true;
         })
         .catch(function () {
-          self.error = "The project timelines could not be loaded.";
+          self.error = t("The project timelines could not be loaded.");
         })
         .then(function () {
           self.loading = false;

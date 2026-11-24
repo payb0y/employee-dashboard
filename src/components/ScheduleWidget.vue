@@ -9,23 +9,23 @@
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
       </div>
-      <span class="schedule-widget__title">Schedule</span>
+      <span class="schedule-widget__title">{{ t('Schedule') }}</span>
     </div>
     <div class="schedule-widget__body">
       <div class="schedule-widget__row schedule-widget__row--clickable" @click="$emit('filter', 'Today')">
-        <span class="schedule-widget__label">Due Today</span>
+        <span class="schedule-widget__label">{{ t('Due Today') }}</span>
         <span class="schedule-widget__value">{{ schedule.dueToday }}</span>
       </div>
       <div class="schedule-widget__row schedule-widget__row--clickable" @click="$emit('filter', 'Upcoming')">
-        <span class="schedule-widget__label">This Week</span>
+        <span class="schedule-widget__label">{{ t('This Week') }}</span>
         <span class="schedule-widget__value">{{ schedule.dueThisWeek }}</span>
       </div>
       <div class="schedule-widget__row schedule-widget__row--clickable" @click="$emit('filter', 'No Due Date')">
-        <span class="schedule-widget__label">No Due Date</span>
+        <span class="schedule-widget__label">{{ t('No Due Date') }}</span>
         <span class="schedule-widget__value">{{ schedule.noDueDate }}</span>
       </div>
       <div class="schedule-widget__row">
-        <span class="schedule-widget__label">Next Milestone</span>
+        <span class="schedule-widget__label">{{ t('Next Milestone') }}</span>
         <span class="schedule-widget__value">{{ schedule.nextMilestone ? schedule.nextMilestone.label : '—' }}</span>
       </div>
     </div>

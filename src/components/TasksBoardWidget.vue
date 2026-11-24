@@ -7,7 +7,7 @@
           <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
         </svg>
       </div>
-      <h3 class="tasks-board__title">My Tasks</h3>
+      <h3 class="tasks-board__title">{{ t('My Tasks') }}</h3>
       <span class="tasks-board__count">{{ tasks.length }}</span>
     </div>
 
@@ -20,27 +20,27 @@
         :class="{ 'iz-chip--active': activeTab === tab }"
         @click="activeTab = tab; currentPage = 1"
       >
-        {{ tab }}
+        {{ tabLabel(tab) }}
         <span v-if="tabCounts[tab] !== undefined" class="tasks-board__tab-count">{{ tabCounts[tab] }}</span>
       </button>
     </div>
 
     <!-- Search -->
     <div class="tasks-board__filters">
-      <input v-model="search" type="text" class="iz-input tasks-board__search" placeholder="Search tasks…" @input="currentPage = 1" />
+      <input v-model="search" type="text" class="iz-input tasks-board__search" :placeholder="t('Search tasks…')" @input="currentPage = 1" />
     </div>
 
     <TaskSignatures :signatures="signatures" :documents="documents" />
 
     <!-- Empty state -->
     <div v-if="tasks.length === 0" class="iz-empty tasks-board__empty">
-      <p>No tasks assigned yet.</p>
-      <p class="tasks-board__empty-hint">Tasks will appear here once you are assigned to Deck cards.</p>
+      <p>{{ t('No tasks assigned yet.') }}</p>
+      <p class="tasks-board__empty-hint">{{ t('Tasks will appear here once you are assigned to Deck cards.') }}</p>
     </div>
 
     <!-- No results for filter -->
     <div v-else-if="filteredTasks.length === 0" class="iz-empty tasks-board__empty">
-      <p>No tasks match the current filter.</p>
+      <p>{{ t('No tasks match the current filter.') }}</p>
     </div>
 
     <!-- Task list -->
@@ -76,7 +76,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                   {{ task.attachmentCount }}
                 </span>
-                <span v-if="task.description" class="tasks-board__item-meta" title="Has description">
+                <span v-if="task.description" class="tasks-board__item-meta" :title="t('Has description')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
                 </span>
               </div>
@@ -99,14 +99,14 @@
               <!-- Left column: description -->
               <div class="task-detail__main">
                 <div class="task-detail__section">
-                  <span class="task-detail__label">Description</span>
+                  <span class="task-detail__label">{{ t('Description') }}</span>
                   <div v-if="task.description" class="task-detail__desc">{{ task.description }}</div>
-                  <p v-else class="task-detail__empty">No description.</p>
+                  <p v-else class="task-detail__empty">{{ t('No description.') }}</p>
                 </div>
 
                 <!-- Comments -->
                 <div class="task-detail__section">
-                  <span class="task-detail__label">Comments ({{ task.commentCount }})</span>
+                  <span class="task-detail__label">{{ t('Comments ({n})', { n: task.commentCount }) }}</span>
                   <div v-if="task.comments && task.comments.length" class="task-detail__comments">
                     <div v-for="c in task.comments" :key="c.id" class="task-detail__comment">
                       <div class="task-detail__comment-head">
@@ -117,54 +117,54 @@
                       <div class="task-detail__comment-body">{{ c.message }}</div>
                     </div>
                   </div>
-                  <p v-else class="task-detail__empty">No comments yet.</p>
+                  <p v-else class="task-detail__empty">{{ t('No comments yet.') }}</p>
                 </div>
 
                 <!-- Attachments -->
                 <div class="task-detail__section">
-                  <span class="task-detail__label">Attachments ({{ task.attachmentCount }})</span>
+                  <span class="task-detail__label">{{ t('Attachments ({n})', { n: task.attachmentCount }) }}</span>
                   <div v-if="task.attachments && task.attachments.length" class="task-detail__attachments">
                     <div v-for="a in task.attachments" :key="a.id" class="task-detail__attachment">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                       <span class="task-detail__attachment-name">{{ a.name }}</span>
-                      <span class="task-detail__attachment-by">by {{ a.createdBy }}</span>
+                      <span class="task-detail__attachment-by">{{ t('by {name}', { name: a.createdBy }) }}</span>
                     </div>
                   </div>
-                  <p v-else class="task-detail__empty">No attachments.</p>
+                  <p v-else class="task-detail__empty">{{ t('No attachments.') }}</p>
                 </div>
               </div>
 
               <!-- Right column: meta sidebar -->
               <div class="task-detail__sidebar">
                 <div class="task-detail__section">
-                  <span class="task-detail__label">Status</span>
+                  <span class="task-detail__label">{{ t('Status') }}</span>
                   <span class="task-detail__stack">{{ task.stackTitle }}</span>
-                  <span v-if="task.done" class="task-detail__done-badge">Completed</span>
+                  <span v-if="task.done" class="task-detail__done-badge">{{ t('Completed') }}</span>
                 </div>
 
                 <div v-if="task.projectName" class="task-detail__section">
-                  <span class="task-detail__label">Project</span>
+                  <span class="task-detail__label">{{ t('Project') }}</span>
                   <span class="task-detail__value task-detail__value--link" @click="$emit('filter-project', task.projectId)">{{ task.projectName }}</span>
                 </div>
 
                 <div class="task-detail__section">
-                  <span class="task-detail__label">Due Date</span>
+                  <span class="task-detail__label">{{ t('Due Date') }}</span>
                   <span v-if="task.duedate" class="task-detail__value" :class="dueClass(task)">
                     {{ formatFullDate(task.duedate) }}
-                    <span class="task-detail__due-rel">({{ formatDue(task.duedate) }})</span>
+                    <span class="task-detail__due-rel">{{ t('({relative})', { relative: formatDue(task.duedate) }) }}</span>
                   </span>
-                  <span v-else class="task-detail__empty">No due date</span>
+                  <span v-else class="task-detail__empty">{{ t('No due date') }}</span>
                 </div>
 
                 <div v-if="task.labels && task.labels.length" class="task-detail__section">
-                  <span class="task-detail__label">Labels</span>
+                  <span class="task-detail__label">{{ t('Labels') }}</span>
                   <div class="task-detail__labels">
                     <span v-for="lbl in task.labels" :key="lbl.id" class="tasks-board__label" :style="labelStyle(lbl.color)">{{ lbl.title }}</span>
                   </div>
                 </div>
 
                 <div class="task-detail__section">
-                  <span class="task-detail__label">Board</span>
+                  <span class="task-detail__label">{{ t('Board') }}</span>
                   <span class="task-detail__value task-detail__value--small">{{ task.boardTitle }}</span>
                 </div>
               </div>
@@ -178,7 +178,7 @@
         <button class="iz-btn iz-btn--icon tasks-board__page-btn" :disabled="currentPage <= 1" @click="currentPage--">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <span class="tasks-board__page-info">{{ currentPage }} / {{ totalPages }}</span>
+        <span class="tasks-board__page-info">{{ t('{page} / {total}', { page: currentPage, total: totalPages }) }}</span>
         <button class="iz-btn iz-btn--icon tasks-board__page-btn" :disabled="currentPage >= totalPages" @click="currentPage++">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -189,6 +189,12 @@
 
 <script>
 import TaskSignatures from "./TaskSignatures.vue";
+import { t, locale } from "../lib/l10n.mjs";
+
+// Tab ids are stable keys: Dashboard, DashboardHeader, FocusNowWidget,
+// WorkloadWidget and ScheduleWidget send them in focusFilter.tab, and the
+// filters below switch on them. They are never shown; tabLabel() is.
+const TASK_TABS = ["All Open", "Overdue", "Today", "Upcoming", "No Due Date", "Done"];
 
 export default {
   name: "TasksBoardWidget",
@@ -204,7 +210,7 @@ export default {
     return {
       activeTab: "All Open",
       search: "",
-      tabs: ["All Open", "Overdue", "Today", "Upcoming", "No Due Date", "Done"],
+      tabs: TASK_TABS,
       selectedTaskId: null,
       currentPage: 1,
       pageSize: 5,
@@ -248,11 +254,11 @@ export default {
       var counts = { "All Open": 0, "Overdue": 0, "Today": 0, "Upcoming": 0, "No Due Date": 0, "Done": 0 };
 
       for (var i = 0; i < this.tasks.length; i++) {
-        var t = this.tasks[i];
-        if (t.done) { counts["Done"]++; continue; }
+        var task = this.tasks[i];
+        if (task.done) { counts["Done"]++; continue; }
         counts["All Open"]++;
-        if (t.duedate) {
-          var d = new Date(t.duedate);
+        if (task.duedate) {
+          var d = new Date(task.duedate);
           if (d < todayStart) counts["Overdue"]++;
           else if (d < todayEnd) counts["Today"]++;
           else counts["Upcoming"]++;
@@ -269,25 +275,25 @@ export default {
       var tab = this.activeTab;
       var q = this.search.trim().toLowerCase();
 
-      var list = this.tasks.filter(function (t) {
+      var list = this.tasks.filter(function (task) {
         switch (tab) {
-          case "Overdue": return !t.done && t.duedate && new Date(t.duedate) < todayStart;
-          case "Today": return !t.done && t.duedate && new Date(t.duedate) >= todayStart && new Date(t.duedate) < todayEnd;
-          case "Upcoming": return !t.done && t.duedate && new Date(t.duedate) >= todayEnd;
-          case "No Due Date": return !t.done && !t.duedate;
-          case "All Open": return !t.done;
-          case "Done": return !!t.done;
+          case "Overdue": return !task.done && task.duedate && new Date(task.duedate) < todayStart;
+          case "Today": return !task.done && task.duedate && new Date(task.duedate) >= todayStart && new Date(task.duedate) < todayEnd;
+          case "Upcoming": return !task.done && task.duedate && new Date(task.duedate) >= todayEnd;
+          case "No Due Date": return !task.done && !task.duedate;
+          case "All Open": return !task.done;
+          case "Done": return !!task.done;
           default: return true;
         }
       });
 
       if (q) {
-        list = list.filter(function (t) {
+        list = list.filter(function (task) {
           return (
-            t.title.toLowerCase().indexOf(q) !== -1 ||
-            (t.projectName && t.projectName.toLowerCase().indexOf(q) !== -1) ||
-            (t.description && t.description.toLowerCase().indexOf(q) !== -1) ||
-            (t.stackTitle && t.stackTitle.toLowerCase().indexOf(q) !== -1)
+            task.title.toLowerCase().indexOf(q) !== -1 ||
+            (task.projectName && task.projectName.toLowerCase().indexOf(q) !== -1) ||
+            (task.description && task.description.toLowerCase().indexOf(q) !== -1) ||
+            (task.stackTitle && task.stackTitle.toLowerCase().indexOf(q) !== -1)
           );
         });
       }
@@ -302,26 +308,45 @@ export default {
     },
   },
   methods: {
+    tabLabel: function (tab) {
+      switch (tab) {
+        case "All Open": return t("All Open");
+        case "Overdue": return t("Overdue");
+        case "Today": return t("Today");
+        case "Upcoming": return t("Upcoming");
+        case "No Due Date": return t("No Due Date");
+        case "Done": return t("Done");
+        default: return tab;
+      }
+    },
     toggleTask: function (id) {
       this.selectedTaskId = this.selectedTaskId === id ? null : id;
     },
     formatDue: function (duedate) {
-      if (!duedate) return "No due date";
+      if (!duedate) return t("No due date");
       var d = new Date(duedate);
       var now = new Date();
       var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       var diff = Math.ceil((d.getTime() - todayStart.getTime()) / 86400000);
-      if (diff < 0) return Math.abs(diff) + "d overdue";
-      if (diff === 0) return "Due today";
-      if (diff === 1) return "Tomorrow";
-      if (diff <= 7) return "In " + diff + " days";
-      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      if (diff < 0) return t("{n}d overdue", { n: Math.abs(diff) });
+      if (diff === 0) return t("Due today");
+      if (diff === 1) return t("Tomorrow");
+      if (diff <= 7) return t("In {n} days", { n: diff });
+      return d.toLocaleDateString(locale(), { month: "short", day: "numeric" });
     },
     formatFullDate: function (dateStr) {
       if (!dateStr) return "";
       var d = new Date(dateStr);
-      return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }) +
-        " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+      // Intl supplies the names in the user's locale; the order and the Dutch
+      // "om" before the time come from the approved pattern.
+      var loc = locale();
+      return t("{weekday}, {month} {day}, {year} {time}", {
+        weekday: d.toLocaleDateString(loc, { weekday: "short" }),
+        month: d.toLocaleDateString(loc, { month: "short" }),
+        day: d.getDate(),
+        year: d.getFullYear(),
+        time: d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" }),
+      });
     },
     dueClass: function (task) {
       if (task.done || !task.duedate) return "";

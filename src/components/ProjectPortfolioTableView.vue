@@ -3,15 +3,15 @@
     <!-- ── Top Header & Timestamp ── -->
     <header class="portfolio-table-view__header">
       <div class="portfolio-table-view__titles">
-        <h3 class="portfolio-table-view__title">Planning Overview – Initiation Phase</h3>
-        <p class="portfolio-table-view__subtitle">Drill-down view from approved Portfolio view</p>
+        <h3 class="portfolio-table-view__title">{{ t('Planning Overview – Initiation Phase') }}</h3>
+        <p class="portfolio-table-view__subtitle">{{ t('Drill-down view from approved Portfolio view') }}</p>
       </div>
       <div class="portfolio-table-view__meta">
-        <span>Last updated {{ lastUpdatedText }}</span>
+        <span>{{ t('Last updated {time}', { time: lastUpdatedText }) }}</span>
         <button
           type="button"
           class="iz-btn iz-btn--quiet iz-btn--sm"
-          title="Refresh"
+          :title="t('Refresh')"
           :disabled="loading"
           @click="fetchTableData"
         >
@@ -24,8 +24,8 @@
     </header>
 
     <!-- ── Top Controls Toolbar ── -->
-    <div class="portfolio__toolbar iz-card iz-card--flat" aria-label="Planning overview filters">
-      <div class="portfolio__segmented" role="group" aria-label="Portfolio scope">
+    <div class="portfolio__toolbar iz-card iz-card--flat" :aria-label="t('Planning overview filters')">
+      <div class="portfolio__segmented" role="group" :aria-label="t('Portfolio scope')">
         <button
           type="button"
           class="portfolio__segment"
@@ -33,7 +33,7 @@
           :aria-pressed="String(scope === 'mine')"
           @click="$emit('change-scope', { scope: 'mine', teamId: teamId })"
         >
-          My projects
+          {{ t('My projects') }}
         </button>
         <button
           v-if="teams.length"
@@ -43,12 +43,12 @@
           :aria-pressed="String(scope === 'team')"
           @click="$emit('change-scope', { scope: 'team', teamId: teamId || teams[0].id })"
         >
-          My team
+          {{ t('My team') }}
         </button>
       </div>
 
-      <div class="portfolio__period-stepper" title="Period controls the weekly workload strip below; click the date to jump to a specific week">
-        <button type="button" class="portfolio__segment portfolio__segment--icon" aria-label="Previous 6 weeks" title="Previous 6 weeks" @click="movePeriod(-42)">
+      <div class="portfolio__period-stepper" :title="t('Period controls the weekly workload strip below; click the date to jump to a specific week')">
+        <button type="button" class="portfolio__segment portfolio__segment--icon" :aria-label="t('Previous 6 weeks')" :title="t('Previous 6 weeks')" @click="movePeriod(-42)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -56,8 +56,8 @@
         <button
           type="button"
           class="portfolio__period-display portfolio__period-display--clickable"
-          title="Click to jump to a specific date"
-          :aria-label="'Current period: ' + periodLabel + '. Click to pick a specific date.'"
+          :title="t('Click to jump to a specific date')"
+          :aria-label="t('Current period: {period}. Click to pick a specific date.', { period: periodLabel })"
           @click="openDatePicker"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -76,12 +76,12 @@
             @click.stop
           />
         </button>
-        <button type="button" class="portfolio__segment portfolio__segment--icon" aria-label="Next 6 weeks" title="Next 6 weeks" @click="movePeriod(42)">
+        <button type="button" class="portfolio__segment portfolio__segment--icon" :aria-label="t('Next 6 weeks')" :title="t('Next 6 weeks')" @click="movePeriod(42)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </button>
-        <button type="button" class="portfolio__segment" title="Reset to current 6 weeks" @click="resetPeriod">Current</button>
+        <button type="button" class="portfolio__segment" :title="t('Reset to current 6 weeks')" @click="resetPeriod">{{ t('Current') }}</button>
       </div>
 
       <div class="portfolio__capacity">
@@ -90,7 +90,7 @@
           <select
             v-if="scope === 'team' && teams.length > 1"
             class="iz-select"
-            aria-label="Team"
+            :aria-label="t('Team')"
             :value="teamId"
             @change="$emit('change-scope', { scope: 'team', teamId: Number($event.target.value) })"
           >
@@ -104,13 +104,13 @@
     <!-- ── Section 1: Weekly Work Preparation Load Strip ── -->
     <section class="iz-card portfolio-table-view__workload">
       <header class="iz-panel__header portfolio__workload-header">
-        <h4 class="iz-panel__title">Weekly work preparation load</h4>
-        <span class="portfolio-table-view__workload-note">Same period as Portfolio: {{ periodWeekRange }}</span>
+        <h4 class="iz-panel__title">{{ t('Weekly work preparation load') }}</h4>
+        <span class="portfolio-table-view__workload-note">{{ t('Same period as Portfolio: {range}', { range: periodWeekRange }) }}</span>
       </header>
 
-      <div v-if="loading" class="portfolio__status-state iz-empty">Loading workload...</div>
+      <div v-if="loading" class="portfolio__status-state iz-empty">{{ t('Loading workload...') }}</div>
       <div v-else-if="error" class="portfolio__status-state iz-error">{{ error }}</div>
-      <div v-else-if="!weeks.length" class="portfolio__status-state iz-empty">No capacity data available.</div>
+      <div v-else-if="!weeks.length" class="portfolio__status-state iz-empty">{{ t('No capacity data available.') }}</div>
       <div v-else class="portfolio__weeks">
         <article v-for="week in weeks" :key="week.label" class="iz-card iz-card--flat portfolio-week portfolio-table-view__week-card">
           <header class="portfolio-table-view__week-header">
@@ -118,14 +118,14 @@
             <small>{{ formatWeekRange(week.start, week.end) }}</small>
           </header>
           <div class="portfolio-table-view__week-sub">
-            <span>Starting {{ week.starting }}</span>
+            <span>{{ t('Starting {n}', { n: week.starting }) }}</span>
             <span class="portfolio-table-view__dot">·</span>
-            <span>Ongoing {{ week.continuing }}</span>
+            <span>{{ t('Ongoing {n}', { n: week.continuing }) }}</span>
             <span class="portfolio-table-view__dot">·</span>
-            <span>Ending {{ week.ending }}</span>
+            <span>{{ t('Ending {n}', { n: week.ending }) }}</span>
           </div>
           <div class="portfolio-table-view__week-badge" :class="workloadBadgeClass(week)">
-            <strong>{{ week.totalActive }} {{ week.totalActive === 1 ? "project" : "projects" }}</strong>
+            <strong>{{ n('%n project', '%n projects', week.totalActive) }}</strong>
             <span>{{ workloadStatusText(week) }}</span>
           </div>
         </article>
@@ -144,7 +144,7 @@
 
     <!-- ── Filter Chips Bar & Search/Export/Columns ── -->
     <div class="portfolio-table-view__filters-row">
-      <div class="portfolio-table-view__chips" role="group" aria-label="Progression filters">
+      <div class="portfolio-table-view__chips" role="group" :aria-label="t('Progression filters')">
         <button
           v-for="chip in filterChips"
           :key="chip.key"
@@ -161,7 +161,7 @@
           @click="activeFilter = chip.key"
         >
           <span>{{ chip.label }}</span>
-          <span class="portfolio-table-view__chip-count">· {{ chip.count }}</span>
+          <span class="portfolio-table-view__chip-count">{{ t('· {n}', { n: chip.count }) }}</span>
         </button>
       </div>
 
@@ -175,8 +175,8 @@
             v-model="searchQuery"
             type="search"
             class="iz-input portfolio-table-view__search"
-            placeholder="Search project..."
-            aria-label="Search project"
+            :placeholder="t('Search project...')"
+            :aria-label="t('Search project')"
           />
         </div>
 
@@ -188,10 +188,10 @@
             @click="showColumnMenu = !showColumnMenu"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 3v18M15 3v18" /></svg>
-            Columns
+            {{ t('Columns') }}
           </button>
           <div v-if="showColumnMenu" class="portfolio-table-view__col-dropdown iz-card">
-            <header><strong>Visible columns</strong></header>
+            <header><strong>{{ t('Visible columns') }}</strong></header>
             <label v-for="col in columns" :key="col.key" class="portfolio-table-view__col-option">
               <input type="checkbox" v-model="visibleColumns[col.key]" :disabled="col.required" />
               <span>{{ col.label }}</span>
@@ -201,27 +201,27 @@
       </div>
     </div>
 
-    <section v-if="listedGaps.length" class="iz-card portfolio-table-view__gap-list" aria-label="Planning gap intervals">
-      <h4>{{ gapListTitle }} ({{ listedGaps.length }})</h4>
+    <section v-if="listedGaps.length" class="iz-card portfolio-table-view__gap-list" :aria-label="t('Planning gap intervals')">
+      <h4>{{ t('{title} ({n})', { title: gapListTitle, n: listedGaps.length }) }}</h4>
       <button v-for="gap in listedGaps" :key="gap.id" type="button" class="iz-btn iz-btn--quiet iz-btn--sm" @click="selectedGap = gap">
-        {{ gap.type === 'internal' ? 'Initiation cards' : 'Between projects' }} · {{ gap.name }} · {{ gap.startDate }} – {{ gap.endDate }} ({{ gap.duration }})
+        {{ t('{type} · {name} · {start} – {end} ({duration})', { type: gap.type === 'internal' ? t('Initiation cards') : t('Between projects'), name: gap.name, start: gap.startDate, end: gap.endDate, duration: gap.duration }) }}
       </button>
     </section>
     <PlanningGapDetails v-if="selectedGap" :gap="selectedGap" @close="closeGapDetails" @open-project="openGapProject" />
     <details v-if="scheduleIssues.length" class="iz-card portfolio-table-view__issues">
-      <summary>Schedule issues ({{ scheduleIssues.length }})</summary>
-      <p v-for="issue in scheduleIssues" :key="issue.id">{{ issue.projectName }}: {{ issue.note }}</p>
+      <summary>{{ t('Schedule issues ({n})', { n: scheduleIssues.length }) }}</summary>
+      <p v-for="issue in scheduleIssues" :key="issue.id">{{ t('{project}: {note}', { project: issue.projectName, note: issue.note }) }}</p>
     </details>
     <details v-if="planningConflicts.length" class="iz-card portfolio-table-view__issues">
-      <summary>Planning conflicts ({{ planningConflicts.length }})</summary>
-      <p v-for="conflict in planningConflicts" :key="conflict.id">{{ conflict.projectName }}: {{ conflict.note }}</p>
+      <summary>{{ t('Planning conflicts ({n})', { n: planningConflicts.length }) }}</summary>
+      <p v-for="conflict in planningConflicts" :key="conflict.id">{{ t('{project}: {note}', { project: conflict.projectName, note: conflict.note }) }}</p>
     </details>
 
     <!-- ── Table Section ── -->
     <section class="iz-card portfolio-table-view__table-card">
       <header class="portfolio-table-view__table-header">
-        <h4 class="iz-panel__title">Projects – Initiation Phase</h4>
-        <span class="portfolio-table-view__badge">Table view</span>
+        <h4 class="iz-panel__title">{{ t('Projects – Initiation Phase') }}</h4>
+        <span class="portfolio-table-view__badge">{{ t('Table view') }}</span>
       </header>
 
       <div class="portfolio-table-view__table-container">
@@ -229,38 +229,38 @@
           <thead>
             <tr>
               <th v-if="visibleColumns.project" scope="col" class="portfolio-table__th--sortable" tabindex="0" role="columnheader" :aria-sort="ariaSort('name')" @click="toggleSort('name')" @keydown="onSortKeydown($event, 'name')">
-                <span>Project</span>
+                <span>{{ t('Project') }}</span>
                 <span class="portfolio-table__sort-arrow" aria-hidden="true">{{ sortArrow('name') }}</span>
               </th>
-              <th v-if="visibleColumns.status" scope="col">Process status</th>
+              <th v-if="visibleColumns.status" scope="col">{{ t('Process status') }}</th>
               <th v-if="visibleColumns.completion" scope="col" class="portfolio-table__th--sortable" tabindex="0" role="columnheader" :aria-sort="ariaSort('completionPct')" @click="toggleSort('completionPct')" @keydown="onSortKeydown($event, 'completionPct')">
-                <span>% done</span>
+                <span>{{ t('% done') }}</span>
                 <span class="portfolio-table__sort-arrow" aria-hidden="true">{{ sortArrow('completionPct') }}</span>
               </th>
-              <th v-if="visibleColumns.expected" scope="col">Expected / reached 100%</th>
-              <th v-if="visibleColumns.startPrep" scope="col">Start Work Preparation</th>
-              <th v-if="visibleColumns.countdownPrep" scope="col">Countdown to start Work Preparation</th>
-              <th v-if="visibleColumns.minExec" scope="col">Min. execution start</th>
+              <th v-if="visibleColumns.expected" scope="col">{{ t('Expected / reached 100%') }}</th>
+              <th v-if="visibleColumns.startPrep" scope="col">{{ t('Start Work Preparation') }}</th>
+              <th v-if="visibleColumns.countdownPrep" scope="col">{{ t('Countdown to start Work Preparation') }}</th>
+              <th v-if="visibleColumns.minExec" scope="col">{{ t('Min. execution start') }}</th>
               <th v-if="visibleColumns.wensweek" scope="col" class="portfolio-table__th--sortable" tabindex="0" role="columnheader" :aria-sort="ariaSort('desiredStartDate')" @click="toggleSort('desiredStartDate')" @keydown="onSortKeydown($event, 'desiredStartDate')">
-                <span>Desired week</span>
+                <span>{{ t('Desired week') }}</span>
                 <span class="portfolio-table__sort-arrow" aria-hidden="true">{{ sortArrow('desiredStartDate') }}</span>
               </th>
-              <th v-if="visibleColumns.countdownWensweek" scope="col">Countdown to Desired Week</th>
+              <th v-if="visibleColumns.countdownWensweek" scope="col">{{ t('Countdown to Desired Week') }}</th>
               <th v-if="visibleColumns.actualStart" scope="col" class="portfolio-table__th--sortable" tabindex="0" role="columnheader" :aria-sort="ariaSort('actualStartDate')" @click="toggleSort('actualStartDate')" @keydown="onSortKeydown($event, 'actualStartDate')">
-                <span>Actual start week</span>
+                <span>{{ t('Actual start week') }}</span>
                 <span class="portfolio-table__sort-arrow" aria-hidden="true">{{ sortArrow('actualStartDate') }}</span>
               </th>
-              <th v-if="visibleColumns.cards" scope="col">Open cards</th>
-              <th v-if="visibleColumns.gap" scope="col">Planning gap</th>
-              <th scope="col" class="portfolio-table__th--action"><span class="sr-only">Action</span></th>
+              <th v-if="visibleColumns.cards" scope="col">{{ t('Open cards') }}</th>
+              <th v-if="visibleColumns.gap" scope="col">{{ t('Planning gap') }}</th>
+              <th scope="col" class="portfolio-table__th--action"><span class="sr-only">{{ t('Action') }}</span></th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="13" class="portfolio-table__empty">Loading data...</td>
+              <td colspan="13" class="portfolio-table__empty">{{ t('Loading data...') }}</td>
             </tr>
             <tr v-else-if="paginatedProjects.length === 0">
-              <td colspan="13" class="portfolio-table__empty">No projects found for selected filters.</td>
+              <td colspan="13" class="portfolio-table__empty">{{ t('No projects found for selected filters.') }}</td>
             </tr>
             <tr
               v-else
@@ -268,7 +268,7 @@
               :key="project.id"
               class="portfolio-table__row"
               tabindex="0"
-              :aria-label="'Open details for ' + project.name"
+              :aria-label="t('Open details for {name}', { name: project.name })"
               @click="onRowClick(project)"
               @keydown="onRowKeydown($event, project)"
             >
@@ -280,14 +280,14 @@
               <!-- 2. Process Status Badge -->
               <td v-if="visibleColumns.status">
                 <span class="iz-badge" :class="statusBadgeClass(project.bucket)">
-                  {{ project.bucketLabel }}
+                  {{ bucketLabel(project.bucket) || project.bucketLabel }}
                 </span>
               </td>
 
               <!-- 3. % Done -->
               <td v-if="visibleColumns.completion">
                 <span class="portfolio-table__pct-pill" :class="{ 'portfolio-table__pct-pill--done': project.completionPct === 100 }">
-                  {{ project.completionPct }}%
+                  {{ t('{pct}%', { pct: project.completionPct }) }}
                 </span>
               </td>
 
@@ -316,7 +316,7 @@
               <!-- 8. Desired Week -->
               <td v-if="visibleColumns.wensweek" class="portfolio-table__cell-wensweek">
                 <strong>{{ project.desiredStartWeek }}</strong>
-                <small v-if="project.isLeadingDesiredWeek" class="portfolio-table__leading-note">actual desired week is leading</small>
+                <small v-if="project.isLeadingDesiredWeek" class="portfolio-table__leading-note">{{ t('actual desired week is leading') }}</small>
               </td>
 
               <!-- 9. Countdown to Desired Week -->
@@ -334,7 +334,7 @@
                 <button
                   type="button"
                   class="portfolio-table__cards-btn"
-                  title="Open Deck board"
+                  :title="t('Open Deck board')"
                   @click.stop="openDeckBoard(project)"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="portfolio-table__deck-icon">
@@ -355,7 +355,7 @@
                 <button v-if="project.planningGap.hasGap" type="button" class="iz-badge iz-badge--danger portfolio-table-view__gap-button" @click.stop="openProjectGap(project)">
                   {{ project.planningGap.display }}
                 </button>
-                <span v-else class="iz-badge iz-badge--success">None</span>
+                <span v-else class="iz-badge iz-badge--success">{{ t('None') }}</span>
               </td>
 
               <!-- 12. Row Action Chevron -->
@@ -372,15 +372,15 @@
       <!-- ── Table Footer & Pagination ── -->
       <footer class="portfolio-table-view__table-footer">
         <span class="portfolio-table-view__hint">
-          Click a project (or press Enter on a focused row) to open its details in Project Performance Analytics below.
+          {{ t('Click a project (or press Enter on a focused row) to open its details in Project Performance Analytics below.') }}
         </span>
 
-        <div class="portfolio-table-view__pagination" role="navigation" aria-label="Table pages">
+        <div class="portfolio-table-view__pagination" role="navigation" :aria-label="t('Table pages')">
           <button
             type="button"
             class="portfolio-table-view__page-btn"
             :disabled="currentPage <= 1"
-            aria-label="Previous page"
+            :aria-label="t('Previous page')"
             @click="currentPage--"
           >
             ‹
@@ -391,7 +391,7 @@
             type="button"
             class="portfolio-table-view__page-btn"
             :class="{ 'portfolio-table-view__page-btn--active': currentPage === p }"
-            :aria-label="'Page ' + p"
+            :aria-label="t('Page {n}', { n: p })"
             :aria-current="currentPage === p ? 'page' : null"
             @click="currentPage = p"
           >
@@ -401,7 +401,7 @@
             type="button"
             class="portfolio-table-view__page-btn"
             :disabled="currentPage >= totalPages"
-            aria-label="Next page"
+            :aria-label="t('Next page')"
             @click="currentPage++"
           >
             ›
@@ -416,10 +416,10 @@
     <!-- ── Brand Footer ── -->
     <footer class="portfolio-table-view__brand-footer">
       <span class="portfolio-table-view__brand">
-        <strong>InZicht</strong> Together making projects insightful.
+        <strong>{{ t('InZicht') }}</strong> {{ t('Together making projects insightful.') }}
       </span>
       <span class="portfolio-table-view__brand-sync">
-        All data is live and current for the selected filters.
+        {{ t('All data is live and current for the selected filters.') }}
       </span>
     </footer>
   </div>
@@ -430,6 +430,23 @@ import axios from "@nextcloud/axios";
 import { generateUrl } from "@nextcloud/router";
 import PlanningGapDetails from "./PlanningGapDetails.vue";
 import PeopleLoadGrid from "./PeopleLoadGrid.vue";
+import { t, n, locale } from "../lib/l10n.mjs";
+
+// Progression filters by projectcreatoraio's bucket key. Its labels are
+// English data, so the words are chosen here; the key drives the filter.
+function bucketLabelOf(key) {
+  switch (key) {
+    case "all": return t("All progression");
+    case "0-24": return t("0–24%");
+    case "25-49": return t("25–49%");
+    case "50-74": return t("50–74%");
+    case "75-99": return t("75–99% / Upcoming");
+    case "100": return t("100% ready for handover");
+    case "gaps": return t("Projects with gaps");
+    case "in-period": return t("In selected period");
+    default: return "";
+  }
+}
 
 export default {
   name: "ProjectPortfolioTableView",
@@ -473,27 +490,26 @@ export default {
         gap: true,
       },
       columns: [
-        { key: "project", label: "Project", required: true },
-        { key: "status", label: "Process status" },
-        { key: "completion", label: "% done" },
-        { key: "expected", label: "Expected / reached 100%" },
-        { key: "startPrep", label: "Start Work Preparation" },
-        { key: "countdownPrep", label: "Countdown to start Work Preparation" },
-        { key: "minExec", label: "Min. execution start" },
-        { key: "wensweek", label: "Desired week" },
-        { key: "countdownWensweek", label: "Countdown to Desired Week" },
-        { key: "actualStart", label: "Actual start week" },
-        { key: "cards", label: "Open cards" },
-        { key: "gap", label: "Planning gap" },
+        { key: "project", label: t("Project"), required: true },
+        { key: "status", label: t("Process status") },
+        { key: "completion", label: t("% done") },
+        { key: "expected", label: t("Expected / reached 100%") },
+        { key: "startPrep", label: t("Start Work Preparation") },
+        { key: "countdownPrep", label: t("Countdown to start Work Preparation") },
+        { key: "minExec", label: t("Min. execution start") },
+        { key: "wensweek", label: t("Desired week") },
+        { key: "countdownWensweek", label: t("Countdown to Desired Week") },
+        { key: "actualStart", label: t("Actual start week") },
+        { key: "cards", label: t("Open cards") },
+        { key: "gap", label: t("Planning gap") },
       ],
     };
   },
   computed: {
     lastUpdatedText: function () {
-      if (!this.lastUpdated) return "today";
-      var h = String(this.lastUpdated.getHours()).padStart(2, "0");
-      var m = String(this.lastUpdated.getMinutes()).padStart(2, "0");
-      return "today " + h + ":" + m;
+      if (!this.lastUpdated) return t("today");
+      var time = this.lastUpdated.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
+      return t("today {time}", { time: time });
     },
     maxPerPerson: function () {
       return (this.tableData && this.tableData.maxProjectsPerMember) || 2;
@@ -504,15 +520,15 @@ export default {
     teamSummaryText: function () {
       if (!this.tableData || !this.tableData.scope) return "";
       var scope = this.tableData.scope;
-      var limit = "max " + this.maxPerPerson + " projects per person";
+      var limit = t("max {n} projects per person", { n: this.maxPerPerson });
       var teamCount = (this.tableData.teams || []).length;
       if (scope.type === "mine") {
-        return "My load across " + teamCount + (teamCount === 1 ? " team" : " teams") + ", " + limit;
+        return n("My load across %n team, {limit}", "My load across %n teams, {limit}", teamCount, { limit: limit });
       }
       if (scope.type === "team" && scope.team) {
-        return this.peopleCount(scope.team.memberCount) + ", " + limit;
+        return t("{people}, {limit}", { people: this.peopleCount(scope.team.memberCount), limit: limit });
       }
-      return this.peopleCount((this.tableData.people || []).length) + " in " + teamCount + (teamCount === 1 ? " team" : " teams") + ", " + limit;
+      return n("{people} in %n team, {limit}", "{people} in %n teams, {limit}", teamCount, { people: this.peopleCount((this.tableData.people || []).length), limit: limit });
     },
     periodStart: function () {
       if (this.tableData && this.tableData.period && this.tableData.period.weekStart) {
@@ -545,14 +561,14 @@ export default {
       }).length;
     },
     periodLabel: function () {
-      if (!this.tableData || !this.tableData.period) return "2026-W31 – 2026-W36 (6 weeks)";
+      if (!this.tableData || !this.tableData.period) return t("Period not available");
       var start = this.parseDate(this.tableData.period.weekStart);
       var end = new Date(start.getTime());
       end.setUTCDate(end.getUTCDate() + 41);
-      return this.isoYearWeek(start) + " – " + this.isoYearWeek(end) + " (6 weeks)";
+      return t("{start} – {end} (6 weeks)", { start: this.isoYearWeek(start), end: this.isoYearWeek(end) });
     },
     periodWeekRange: function () {
-      if (!this.tableData || !this.tableData.period) return "2026-W31-2026-W36";
+      if (!this.tableData || !this.tableData.period) return t("Period not available");
       var start = this.parseDate(this.tableData.period.weekStart);
       var end = new Date(start.getTime());
       end.setUTCDate(end.getUTCDate() + 41);
@@ -572,27 +588,26 @@ export default {
       return this.activeFilter === "gaps" ? this.planningGaps : [];
     },
     gapListTitle: function () {
-      return this.gapFocusProject ? "Planning gaps · " + this.gapFocusProject.name : "Open planning gaps";
+      return this.gapFocusProject ? t("Planning gaps · {name}", { name: this.gapFocusProject.name }) : t("Open planning gaps");
     },
     filterChips: function () {
       var rawBuckets = (this.tableData && this.tableData.buckets) ? this.tableData.buckets.slice() : [
-        { key: "all", label: "All progression", count: 0 },
-        { key: "0-24", label: "0–24%", count: 0 },
-        { key: "25-49", label: "25–49%", count: 0 },
-        { key: "50-74", label: "50–74%", count: 0 },
-        { key: "75-99", label: "75–99% / Upcoming", count: 0 },
-        { key: "100", label: "100% ready for handover", count: 0 },
-        { key: "gaps", label: "Projects with gaps", count: 0 },
+        { key: "all", count: 0 },
+        { key: "0-24", count: 0 },
+        { key: "25-49", count: 0 },
+        { key: "50-74", count: 0 },
+        { key: "75-99", count: 0 },
+        { key: "100", count: 0 },
+        { key: "gaps", count: 0 },
       ];
+      // The label comes from the key; the backend's own label is only a
+      // fallback for a key this view does not know.
       var buckets = rawBuckets.map(function (b) {
-        if (b.key === "all" && (b.label === "All statuses" || !b.label)) {
-          return Object.assign({}, b, { label: "All progression" });
-        }
-        return b;
+        return Object.assign({}, b, { label: bucketLabelOf(b.key) || b.label || "" });
       });
       buckets.push({
         key: "in-period",
-        label: "In selected period",
+        label: bucketLabelOf("in-period"),
         count: this.inPeriodCount,
       });
       return buckets;
@@ -649,7 +664,7 @@ export default {
     pageCountDisplay: function () {
       var count = this.paginatedProjects.length;
       var total = this.sortedProjects.length;
-      return count + " / " + total;
+      return t("{count} / {total}", { count: count, total: total });
     },
   },
   watch: {
@@ -764,7 +779,7 @@ export default {
         this.clampPage();
       } catch (e) {
         if (requestId !== this.tableRequestId) return;
-        this.error = "Planning overview could not be loaded.";
+        this.error = t("Planning overview could not be loaded.");
       } finally {
         if (requestId === this.tableRequestId) this.loading = false;
       }
@@ -795,7 +810,7 @@ export default {
       d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
       var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
       var week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-      return d.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
+      return t("{year}-W{week}", { year: d.getUTCFullYear(), week: String(week).padStart(2, "0") });
     },
     weekDisplayLabel: function (week) {
       if (week && week.label) return week.label;
@@ -808,16 +823,14 @@ export default {
     },
     formatWeekRange: function (startStr, endStr) {
       if (!startStr || !endStr) return "";
-      var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      var s = this.parseDate(startStr);
-      var e = this.parseDate(endStr);
-      return s.getUTCDate() + " " + months[s.getUTCMonth()] + " – " + e.getUTCDate() + " " + months[e.getUTCMonth()];
+      var format = new Intl.DateTimeFormat(locale(), { day: "numeric", month: "short", timeZone: "UTC" });
+      return t("{start} – {end}", { start: format.format(this.parseDate(startStr)), end: format.format(this.parseDate(endStr)) });
     },
     formatNumber: function (val) {
-      return Number(val || 0).toLocaleString("en-US", { maximumFractionDigits: 1 });
+      return Number(val || 0).toLocaleString(locale(), { maximumFractionDigits: 1 });
     },
     peopleCount: function (count) {
-      return count === 1 ? "1 person" : Number(count || 0) + " people";
+      return n("%n person", "%n people", Number(count || 0));
     },
     workloadBadgeClass: function (week) {
       if (week.overCapacity) return "portfolio-table-view__badge--over";
@@ -829,14 +842,17 @@ export default {
     // the week reads as fine unless someone is overloaded.
     workloadStatusText: function (week) {
       if (week.overCapacity) {
-        return week.overloadedPeople === 1 ? "1 person overloaded" : week.overloadedPeople + " people overloaded";
+        return n("%n person overloaded", "%n people overloaded", week.overloadedPeople);
       }
-      if (week.freeSlots === 0) return "No room left";
+      if (week.freeSlots === 0) return t("No room left");
       if (week.freeSlots !== null && week.freeSlots !== undefined) {
-        return week.freeSlots === 1 ? "1 free slot" : week.freeSlots + " free slots";
+        return n("%n free slot", "%n free slots", week.freeSlots);
       }
-      if (week.totalActive === 0) return "No active projects";
-      return week.fullPeople ? this.peopleCount(week.fullPeople) + " full" : "Within capacity";
+      if (week.totalActive === 0) return t("No active projects");
+      return week.fullPeople ? t("{people} full", { people: this.peopleCount(week.fullPeople) }) : t("Within capacity");
+    },
+    bucketLabel: function (key) {
+      return bucketLabelOf(key);
     },
     statusBadgeClass: function (bucket) {
       if (bucket === "100") return "iz-badge--success";

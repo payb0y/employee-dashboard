@@ -1,5 +1,5 @@
 <template>
-  <CardPanel title="Talk mentions" :total="mentions.length" empty="No unread mentions">
+  <CardPanel :title="t('Talk mentions')" :total="mentions.length" :empty="t('No unread mentions')">
     <template #icon>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-6a8 8 0 0 1 8-8h2a8 8 0 0 1 8 3Z" />
@@ -13,7 +13,7 @@
       :href="roomUrl(m.token)"
     >
       <span class="mentions-panel__name">{{ m.name }}</span>
-      <span class="mentions-panel__hint">You were mentioned</span>
+      <span class="mentions-panel__hint">{{ t('You were mentioned') }}</span>
     </a>
   </CardPanel>
 </template>

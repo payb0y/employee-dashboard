@@ -1,5 +1,5 @@
 <template>
-  <CardPanel title="My Projects" :total="projects.length" empty="No projects assigned">
+  <CardPanel :title="t('My Projects')" :total="projects.length" :empty="t('No projects assigned')">
     <template #icon>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
@@ -21,6 +21,7 @@
 
 <script>
 import CardPanel from "./CardPanel.vue";
+import { t } from "../../lib/l10n.mjs";
 
 export default {
   name: "ProjectsPanel",
@@ -30,9 +31,9 @@ export default {
   },
   methods: {
     statusLabel: function (status) {
-      if (status === 1) return "Completed";
-      if (status === 2) return "Archived";
-      return "Active";
+      if (status === 1) return t("Completed");
+      if (status === 2) return t("Archived");
+      return t("Active");
     },
     statusClass: function (status) {
       if (status === 1) return "iz-badge--accent";

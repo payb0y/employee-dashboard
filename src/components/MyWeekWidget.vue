@@ -8,8 +8,8 @@
           <line x1="8" y1="2" x2="8" y2="6" />
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
-        My Week
-        <span class="iz-badge iz-badge--accent">{{ totalThisWeek }} tasks</span>
+        {{ t('My Week') }}
+        <span class="iz-badge iz-badge--accent">{{ t('{n} tasks', { n: totalThisWeek }) }}</span>
       </h3>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="my-week__chevron" :class="{ 'my-week__chevron--rotated': collapsed }">
         <polyline points="18 15 12 9 6 15" />
@@ -19,20 +19,20 @@
 
       <!-- Week navigation -->
       <div class="my-week__nav">
-        <button class="iz-btn iz-btn--icon my-week__nav-btn" title="Previous week" @click.stop="prevWeek">
+        <button class="iz-btn iz-btn--icon my-week__nav-btn" :title="t('Previous week')" @click.stop="prevWeek">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <span class="my-week__nav-label">{{ weekLabel }}</span>
-        <button class="iz-btn iz-btn--icon my-week__nav-btn" title="Next week" @click.stop="nextWeek">
+        <button class="iz-btn iz-btn--icon my-week__nav-btn" :title="t('Next week')" @click.stop="nextWeek">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button v-if="!isCurrentWeek" class="my-week__nav-today" @click.stop="goToCurrentWeek">Today</button>
+        <button v-if="!isCurrentWeek" class="my-week__nav-today" @click.stop="goToCurrentWeek">{{ t('Today') }}</button>
       </div>
 
       <!-- Overdue -->
       <div v-if="overdueTasks.length > 0" class="my-week__day my-week__day--overdue">
         <div class="my-week__day-header">
-          <span class="my-week__day-label">Overdue</span>
+          <span class="my-week__day-label">{{ t('Overdue') }}</span>
           <span class="my-week__day-count">{{ overdueTasks.length }}</span>
         </div>
         <div v-for="task in overdueTasks" :key="'o-' + task.id" class="my-week__task my-week__task--clickable" :class="{ 'my-week__task--done': task.done }" @click="$emit('select-task', task.id)">
@@ -48,12 +48,12 @@
       <div v-for="day in weekDays" :key="day.date" class="my-week__day" :class="{ 'my-week__day--today': day.isToday }">
         <div class="my-week__day-header">
           <span class="my-week__day-label">
-            {{ day.fullLabel }}, {{ day.dateLabel }}
-            <span v-if="day.isToday" class="my-week__today-tag">Today</span>
+            {{ t('{weekday}, {date}', { weekday: day.fullLabel, date: day.dateLabel }) }}
+            <span v-if="day.isToday" class="my-week__today-tag">{{ t('Today') }}</span>
           </span>
           <span v-if="dayTasks(day.date).length" class="my-week__day-count">{{ dayTasks(day.date).length }}</span>
         </div>
-        <div v-if="dayTasks(day.date).length === 0" class="my-week__empty-day">No tasks</div>
+        <div v-if="dayTasks(day.date).length === 0" class="my-week__empty-day">{{ t('No tasks') }}</div>
         <div v-for="task in dayTasks(day.date)" :key="'d-' + task.id" class="my-week__task my-week__task--clickable" :class="{ 'my-week__task--done': task.done }" @click="$emit('select-task', task.id)">
           <span class="my-week__task-dot" :class="{ 'my-week__task-dot--done': task.done }"></span>
           <span class="my-week__task-title">{{ task.title }}</span>
@@ -67,6 +67,13 @@
 </template>
 
 <script>
+import { t, locale } from "../lib/l10n.mjs";
+
+// Month and weekday names come from Intl in the user's Nextcloud locale.
+function formatDate(d, options) {
+  return new Intl.DateTimeFormat(locale(), options).format(d);
+}
+
 export default {
   name: "MyWeekWidget",
   props: {
@@ -93,25 +100,22 @@ export default {
       var mon = this.mondayDate;
       var sun = new Date(mon);
       sun.setDate(sun.getDate() + 6);
-      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      var start = months[mon.getMonth()] + " " + mon.getDate();
-      var end = months[sun.getMonth()] + " " + sun.getDate() + ", " + sun.getFullYear();
-      return start + " – " + end;
+      var start = formatDate(mon, { month: "short", day: "numeric" });
+      var end = formatDate(sun, { month: "short", day: "numeric", year: "numeric" });
+      return t("{start} – {end}", { start: start, end: end });
     },
     isCurrentWeek: function () {
       return this.weekOffset === 0;
     },
     weekDays: function () {
       var days = [];
-      var dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       for (var i = 0; i < 7; i++) {
         var d = new Date(this.mondayDate);
         d.setDate(d.getDate() + i);
         var iso = this.toIso(d);
         days.push({
-          fullLabel: dayNames[i],
-          dateLabel: months[d.getMonth()] + " " + d.getDate(),
+          fullLabel: formatDate(d, { weekday: "long" }),
+          dateLabel: formatDate(d, { month: "short", day: "numeric" }),
           date: iso,
           isToday: iso === this.today,
         });
@@ -131,9 +135,9 @@ export default {
     overdueTasks: function () {
       var today = this.today;
       var monday = this.weekDays.length ? this.weekDays[0].date : today;
-      return this.tasks.filter(function (t) {
-        if (!t.duedate || t.done) return false;
-        var iso = t.duedate.substring(0, 10);
+      return this.tasks.filter(function (task) {
+        if (!task.duedate || task.done) return false;
+        var iso = task.duedate.substring(0, 10);
         return iso < monday;
       });
     },
@@ -145,9 +149,9 @@ export default {
       var monday = this.weekDays.length ? this.weekDays[0].date : this.today;
       var sunday = this.sundayDate;
       var count = 0;
-      this.tasks.forEach(function (t) {
-        if (!t.duedate) return;
-        var iso = t.duedate.substring(0, 10);
+      this.tasks.forEach(function (task) {
+        if (!task.duedate) return;
+        var iso = task.duedate.substring(0, 10);
         if (iso >= monday && iso <= sunday) count++;
       });
       return count + this.overdueTasks.length;
@@ -169,8 +173,7 @@ export default {
     shortDate: function (iso) {
       if (!iso) return "";
       var d = new Date(iso.substring(0, 10) + "T00:00:00");
-      var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      return months[d.getMonth()] + " " + d.getDate();
+      return formatDate(d, { month: "short", day: "numeric" });
     },
   },
 };

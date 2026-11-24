@@ -4,34 +4,34 @@
     <div class="cards-view__grid">
       <ProjectsPanel :projects="projects" @select="$emit('filter-project', $event)" />
       <TasksPanel
-        title="Overdue"
+        :title="t('Overdue')"
         :tasks="overdue"
-        empty="Nothing overdue. You're clear."
+        :empty="t('Nothing overdue. You\'re clear.')"
         @select="$emit('select-task', $event)"
       />
       <TasksPanel
-        title="Due today"
+        :title="t('Due today')"
         :tasks="dueToday"
-        empty="Nothing due today"
+        :empty="t('Nothing due today')"
         @select="$emit('select-task', $event)"
       />
       <TasksPanel
-        title="Due tomorrow"
+        :title="t('Due tomorrow')"
         :tasks="dueTomorrow"
-        empty="Nothing due tomorrow"
+        :empty="t('Nothing due tomorrow')"
         @select="$emit('select-task', $event)"
       />
       <TasksPanel
-        title="Upcoming"
+        :title="t('Upcoming')"
         :tasks="upcoming"
         ranges
-        empty="Nothing scheduled"
+        :empty="t('Nothing scheduled')"
         @select="$emit('select-task', $event)"
       />
       <TasksPanel
-        title="No due date"
+        :title="t('No due date')"
         :tasks="noDueDate"
-        empty="Every card has a date"
+        :empty="t('Every card has a date')"
         @select="$emit('select-task', $event)"
       />
       <EventsPanel :events="events" />

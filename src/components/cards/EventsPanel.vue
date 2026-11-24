@@ -1,5 +1,5 @@
 <template>
-  <CardPanel title="Upcoming meetings" :total="events.length" empty="Nothing in the next 7 days">
+  <CardPanel :title="t('Upcoming meetings')" :total="events.length" :empty="t('Nothing in the next 7 days')">
     <template #icon>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -18,6 +18,7 @@
 
 <script>
 import CardPanel from "./CardPanel.vue";
+import { locale } from "../../lib/l10n.mjs";
 
 export default {
   name: "EventsPanel",
@@ -30,10 +31,10 @@ export default {
       var d = new Date(ev.startsAt);
       if (isNaN(d.getTime())) return "";
       if (ev.allDay) {
-        return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+        return d.toLocaleDateString(locale(), { weekday: "short", day: "numeric", month: "short" });
       }
-      return d.toLocaleDateString(undefined, { weekday: "short" }) +
-        " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+      return d.toLocaleDateString(locale(), { weekday: "short" }) +
+        " " + d.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
     },
   },
 };
