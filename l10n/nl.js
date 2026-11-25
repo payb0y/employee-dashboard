@@ -425,7 +425,7 @@ OC.L10N.register(
     "Not sent yet": "Nog niet verzonden",
     "Not set": "Niet ingesteld",
     "Not started": "Niet gestart",
-    "Notes": "Notities",
+    "Notes": "Communicatie",
     "Nothing due today": "Geen deadlines vandaag",
     "Nothing due tomorrow": "Geen deadlines morgen",
     "Nothing here": "Niets te tonen",
