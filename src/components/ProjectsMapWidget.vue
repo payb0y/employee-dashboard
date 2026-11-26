@@ -25,6 +25,7 @@
 
 <script>
 import L from "leaflet";
+import { localizeLeaflet } from "../lib/leafletL10n.mjs";
 import "leaflet/dist/leaflet.css";
 import { t } from "../lib/l10n.mjs";
 
@@ -102,6 +103,7 @@ export default {
       if (!el) {
         return;
       }
+      localizeLeaflet(L);
       this._map = L.map(el, { scrollWheelZoom: true });
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
